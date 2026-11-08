@@ -5,15 +5,19 @@
 **ابدأ دايمًا بقراءة `ROADMAP.md`** وكمّل من أول مهمة غير مكتملة. اتبع «قواعد العمل» اللي فيه.
 
 ## الأوامر
+
 - `npm run dev` — تشغيل التطوير (Vite)
 - `npm test` — اختبارات Vitest
 - `npm run build` — build الإنتاج في `dist/`
-- قبل أي commit: `npm test && npm run build`
+- `npm run lint` — ESLint · `npm run format` — Prettier (`src/data/` مستثناة عمدًا عشان مصفوفات المحطات تفضل مضغوطة)
+- قبل أي commit: `npm run lint && npm test && npm run build`
 
 ## الـ Stack
+
 React 18 (JSX، مش TypeScript) · Vite · Tailwind CSS v4 · Vitest · خط IBM Plex Sans Arabic (@fontsource).
 
 ## الهيكل
+
 - `src/data/metro.js` — المحطات والخطوط والأسعار (مصدر الحقيقة الوحيد للبيانات)
 - `src/data/layout.js` — إحداثيات الخريطة **التخطيطية** (مش جغرافية)
 - `src/lib/router.js` — Dijkstra على حالات `(محطة، خدمة)` + حساب السعر
@@ -21,6 +25,7 @@ React 18 (JSX، مش TypeScript) · Vite · Tailwind CSS v4 · Vitest · خط IB
 - `src/components/` — StationPicker · MetroMap · RouteResult
 
 ## قرارات مهمة
+
 - الخط الثالث بيتفرع عند الكيت كات، فمتمثّل كخدمتين `3A` و`3B` بجذع مشترك. الانتقال بينهم = «غيّر القطار».
 - عدد المحطات للتسعير = عدد الخطوات من محطة الركوب لمحطة النزول (محطة النزول محسوبة). **افتراض محتاج تأكيد رسمي.**
 - جزاء التحويل = 6 محطات في Dijkstra. الزمن تقديري (2.2 د/محطة + 4 د/تحويلة).
@@ -30,6 +35,7 @@ React 18 (JSX، مش TypeScript) · Vite · Tailwind CSS v4 · Vitest · خط IB
 - الأسعار سارية من 27 مارس 2026: ≤9 = 10، ≤16 = 12، ≤23 = 15، ≤39 = 20.
 
 ## ممنوعات
+
 - ممنوع تألّف بيانات محطات أو أسعار أو إحداثيات. كل بيان لازم مصدر في `docs/DATA.md`.
 - اسأل أحمد قبل إضافة backend أو خدمة مدفوعة أو تغيير الـ stack.
 - حافظ على الواجهة RTL واستخدم خصائص Tailwind الـ logical (`ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-`).

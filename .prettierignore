@@ -1,0 +1,6 @@
+dist
+coverage
+node_modules
+package-lock.json
+# ملفات البيانات متنسقة يدوي (مصفوفات محطات مضغوطة للمراجعة)
+src/data/
