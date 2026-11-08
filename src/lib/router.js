@@ -23,8 +23,12 @@ export const linesAt = (stationId) => [
 
 // ---- طابور أولويات بسيط (min-heap) ----
 class MinHeap {
-  constructor() { this.a = [] }
-  get size() { return this.a.length }
+  constructor() {
+    this.a = []
+  }
+  get size() {
+    return this.a.length
+  }
   push(item, pri) {
     const a = this.a
     a.push([pri, item])
@@ -44,7 +48,8 @@ class MinHeap {
       a[0] = last
       let i = 0
       for (;;) {
-        const l = 2 * i + 1, r = l + 1
+        const l = 2 * i + 1,
+          r = l + 1
         let m = i
         if (l < a.length && a[l][0] < a[m][0]) m = l
         if (r < a.length && a[r][0] < a[m][0]) m = r
@@ -94,7 +99,10 @@ export function findRoute(fromId, toId) {
     const [d, [st, sid]] = heap.pop()
     const k = key(st, sid)
     if (d > (dist.get(k) ?? Infinity)) continue
-    if (st === toId) { goal = k; break }
+    if (st === toId) {
+      goal = k
+      break
+    }
 
     const svc = svcById[sid]
     const i = indexOf[sid][st]

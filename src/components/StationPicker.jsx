@@ -9,7 +9,11 @@ export function LineDots({ stationId }) {
   return (
     <span className="inline-flex gap-1" aria-hidden="true">
       {linesAt(stationId).map((l) => (
-        <span key={l} className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: LINES[l].color }} />
+        <span
+          key={l}
+          className="inline-block h-2.5 w-2.5 rounded-full"
+          style={{ background: LINES[l].color }}
+        />
       ))}
     </span>
   )
@@ -50,7 +54,10 @@ export default function StationPicker({ label, value, onChange, placeholder, mar
 
   return (
     <div className="relative">
-      <label htmlFor={`${uid}-input`} className="mb-1.5 flex items-center gap-2 text-sm font-medium text-ink-soft">
+      <label
+        htmlFor={`${uid}-input`}
+        className="mb-1.5 flex items-center gap-2 text-sm font-medium text-ink-soft"
+      >
         {marker}
         {label}
       </label>
@@ -62,13 +69,27 @@ export default function StationPicker({ label, value, onChange, placeholder, mar
           aria-expanded={open}
           aria-controls={`${uid}-list`}
           aria-autocomplete="list"
-          aria-activedescendant={open && results[active] ? `${uid}-opt-${results[active].id}` : undefined}
+          aria-activedescendant={
+            open && results[active] ? `${uid}-opt-${results[active].id}` : undefined
+          }
           autoComplete="off"
-          value={open ? query : selected?.ar ?? ''}
+          value={open ? query : (selected?.ar ?? '')}
           placeholder={placeholder}
-          onFocus={(e) => { setOpen(true); setQuery(''); setActive(0); e.target.select() }}
-          onBlur={() => { setOpen(false); setQuery('') }}
-          onChange={(e) => { setQuery(e.target.value); setActive(0); setOpen(true) }}
+          onFocus={(e) => {
+            setOpen(true)
+            setQuery('')
+            setActive(0)
+            e.target.select()
+          }}
+          onBlur={() => {
+            setOpen(false)
+            setQuery('')
+          }}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setActive(0)
+            setOpen(true)
+          }}
           onKeyDown={onKeyDown}
           className="w-full rounded-xl border-2 border-ink/15 bg-card px-4 py-3 pe-11 text-lg font-medium outline-none transition-colors placeholder:font-normal placeholder:text-ink-soft/60 focus:border-ink"
         />
@@ -77,7 +98,10 @@ export default function StationPicker({ label, value, onChange, placeholder, mar
             type="button"
             aria-label={`مسح ${label}`}
             onMouseDown={(e) => e.preventDefault()}
-            onClick={() => { onChange(null); inputRef.current?.focus() }}
+            onClick={() => {
+              onChange(null)
+              inputRef.current?.focus()
+            }}
             className="absolute inset-y-0 end-2 my-auto h-8 w-8 rounded-full text-xl leading-none text-ink-soft hover:bg-ink/10"
           >
             ×
@@ -98,13 +122,18 @@ export default function StationPicker({ label, value, onChange, placeholder, mar
               id={`${uid}-opt-${st.id}`}
               role="option"
               aria-selected={i === active}
-              onMouseDown={(e) => { e.preventDefault(); choose(st.id) }}
+              onMouseDown={(e) => {
+                e.preventDefault()
+                choose(st.id)
+              }}
               onMouseEnter={() => setActive(i)}
               className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 ${i === active ? 'bg-saffron/40' : ''}`}
             >
               <span>
                 <span className="font-medium">{st.ar}</span>
-                <span dir="ltr" className="ms-2 text-sm text-ink-soft">{st.en}</span>
+                <span dir="ltr" className="ms-2 text-sm text-ink-soft">
+                  {st.en}
+                </span>
               </span>
               <LineDots stationId={st.id} />
             </li>

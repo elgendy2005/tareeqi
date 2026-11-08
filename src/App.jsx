@@ -80,7 +80,12 @@ export default function App() {
                 value={from}
                 onChange={setFrom}
                 placeholder="اكتب اسم المحطة…"
-                marker={<span className="inline-block h-3 w-3 rounded-full border-[3px] border-saffron bg-ink" aria-hidden="true" />}
+                marker={
+                  <span
+                    className="inline-block h-3 w-3 rounded-full border-[3px] border-saffron bg-ink"
+                    aria-hidden="true"
+                  />
+                }
               />
               <div className="flex justify-center">
                 <button
@@ -97,7 +102,12 @@ export default function App() {
                 value={to}
                 onChange={setTo}
                 placeholder="اكتب اسم المحطة…"
-                marker={<span className="inline-block h-3 w-3 rounded-full border-[3px] border-ink bg-saffron" aria-hidden="true" />}
+                marker={
+                  <span
+                    className="inline-block h-3 w-3 rounded-full border-[3px] border-ink bg-saffron"
+                    aria-hidden="true"
+                  />
+                }
               />
             </div>
             {route && (
@@ -144,7 +154,6 @@ export default function App() {
             </div>
           )}
         </div>
-
       </main>
 
       <footer className="mt-6 text-center text-xs text-ink-soft">

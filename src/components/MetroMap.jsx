@@ -8,7 +8,12 @@ const MAX_K = 6
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v))
 
 const TERMINALS = new Set([
-  'helwan', 'new-el-marg', 'el-mounib', 'shubra-el-kheima', 'adly-mansour', 'rod-el-farag-corridor',
+  'helwan',
+  'new-el-marg',
+  'el-mounib',
+  'shubra-el-kheima',
+  'adly-mansour',
+  'rod-el-farag-corridor',
 ])
 
 // مكان الـ label لكل محطة تبادل/طرف عشان منزحمش الوسط. [anchor, dx, dy]
@@ -87,7 +92,13 @@ export default function MetroMap({ route, from, to, onStationClick }) {
 
   // مهم: مفيش setPointerCapture هنا، لأنه بيخطف الـ click من المحطة. بنعمل capture بس لما السحب يبدأ فعلًا.
   const onPointerDown = (e) => {
-    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, captured: false })
+    pointers.current.set(e.pointerId, {
+      x: e.clientX,
+      y: e.clientY,
+      sx: e.clientX,
+      sy: e.clientY,
+      captured: false,
+    })
     gesture.current.moved = false
     gesture.current.lastDist = 0
   }
@@ -189,7 +200,9 @@ export default function MetroMap({ route, from, to, onStationClick }) {
             strokeLinecap="round"
             opacity="0.55"
           />
-          <text x="448" y="170" fontSize={fs(15)} fill="#6f97a5" transform="rotate(8 448 170)">النيل</text>
+          <text x="448" y="170" fontSize={fs(15)} fill="#6f97a5" transform="rotate(8 448 170)">
+            النيل
+          </text>
 
           {/* الخطوط الأساسية */}
           {LINE_PATHS.map((p, i) => (
@@ -210,8 +223,22 @@ export default function MetroMap({ route, from, to, onStationClick }) {
             const d = toPath(leg.stations.map((s) => POSITIONS[s]))
             return (
               <g key={i}>
-                <path d={d} fill="none" stroke="#fbf8f1" strokeWidth={r(20)} strokeLinecap="round" strokeLinejoin="round" />
-                <path d={d} fill="none" stroke={LINES[leg.line].color} strokeWidth={r(12)} strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d={d}
+                  fill="none"
+                  stroke="#fbf8f1"
+                  strokeWidth={r(20)}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d={d}
+                  fill="none"
+                  stroke={LINES[leg.line].color}
+                  strokeWidth={r(12)}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </g>
             )
           })}
@@ -225,7 +252,8 @@ export default function MetroMap({ route, from, to, onStationClick }) {
             const isFrom = st.id === from
             const isTo = st.id === to
             const radius = isFrom || isTo ? r(11) : inter ? r(9) : onRoute ? r(6.5) : r(5)
-            const lineColor = LINES[(route?.legs.find((l) => l.stations.includes(st.id))?.line) ?? 1].color
+            const lineColor =
+              LINES[route?.legs.find((l) => l.stations.includes(st.id))?.line ?? 1].color
             return (
               <g
                 key={st.id}
@@ -240,30 +268,46 @@ export default function MetroMap({ route, from, to, onStationClick }) {
                   cy={y}
                   r={radius}
                   fill={isFrom ? '#1d1b16' : isTo ? '#f2b134' : '#fbf8f1'}
-                  stroke={isFrom ? '#f2b134' : isTo ? '#1d1b16' : inter ? '#1d1b16' : onRoute ? lineColor : '#5b564a'}
+                  stroke={
+                    isFrom
+                      ? '#f2b134'
+                      : isTo
+                        ? '#1d1b16'
+                        : inter
+                          ? '#1d1b16'
+                          : onRoute
+                            ? lineColor
+                            : '#5b564a'
+                  }
                   strokeWidth={r(inter || isFrom || isTo ? 4 : 2.5)}
                 />
-                {showLabel(st.id) && (() => {
-                  const [anchor, dx, dy] = labelPos(st.id, x)
-                  const strong = isFrom || isTo || inter || TERMINALS.has(st.id) || routeStations.transfers.has(st.id)
-                  return (
-                    <text
-                      x={x + (dx * unit) / Math.pow(k, 0.55)}
-                      y={y + (dy * unit) / Math.pow(k, 0.55)}
-                      textAnchor={anchor}
-                      fontSize={fs(strong ? 15 : 12.5)}
-                      fontWeight={strong ? 700 : 500}
-                      fill="#1d1b16"
-                      stroke="#fbf8f1"
-                      strokeWidth={fs(4)}
-                      paintOrder="stroke"
-                      strokeLinejoin="round"
-                      pointerEvents="none"
-                    >
-                      {st.ar}
-                    </text>
-                  )
-                })()}
+                {showLabel(st.id) &&
+                  (() => {
+                    const [anchor, dx, dy] = labelPos(st.id, x)
+                    const strong =
+                      isFrom ||
+                      isTo ||
+                      inter ||
+                      TERMINALS.has(st.id) ||
+                      routeStations.transfers.has(st.id)
+                    return (
+                      <text
+                        x={x + (dx * unit) / Math.pow(k, 0.55)}
+                        y={y + (dy * unit) / Math.pow(k, 0.55)}
+                        textAnchor={anchor}
+                        fontSize={fs(strong ? 15 : 12.5)}
+                        fontWeight={strong ? 700 : 500}
+                        fill="#1d1b16"
+                        stroke="#fbf8f1"
+                        strokeWidth={fs(4)}
+                        paintOrder="stroke"
+                        strokeLinejoin="round"
+                        pointerEvents="none"
+                      >
+                        {st.ar}
+                      </text>
+                    )
+                  })()}
               </g>
             )
           })}
@@ -272,9 +316,30 @@ export default function MetroMap({ route, from, to, onStationClick }) {
 
       {/* أزرار الزوم */}
       <div className="absolute bottom-3 start-3 flex flex-col overflow-hidden rounded-xl border-2 border-ink bg-card">
-        <button type="button" aria-label="تكبير" onClick={() => zoomCenter(1.5)} className="h-10 w-10 text-xl font-bold hover:bg-saffron/40">+</button>
-        <button type="button" aria-label="تصغير" onClick={() => zoomCenter(1 / 1.5)} className="h-10 w-10 border-t-2 border-ink text-xl font-bold hover:bg-saffron/40">−</button>
-        <button type="button" aria-label="إعادة ضبط العرض" onClick={() => setT({ k: 1, x: 0, y: 0 })} className="h-10 w-10 border-t-2 border-ink text-sm hover:bg-saffron/40">⟲</button>
+        <button
+          type="button"
+          aria-label="تكبير"
+          onClick={() => zoomCenter(1.5)}
+          className="h-10 w-10 text-xl font-bold hover:bg-saffron/40"
+        >
+          +
+        </button>
+        <button
+          type="button"
+          aria-label="تصغير"
+          onClick={() => zoomCenter(1 / 1.5)}
+          className="h-10 w-10 border-t-2 border-ink text-xl font-bold hover:bg-saffron/40"
+        >
+          −
+        </button>
+        <button
+          type="button"
+          aria-label="إعادة ضبط العرض"
+          onClick={() => setT({ k: 1, x: 0, y: 0 })}
+          className="h-10 w-10 border-t-2 border-ink text-sm hover:bg-saffron/40"
+        >
+          ⟲
+        </button>
       </div>
 
       {/* مفتاح الخطوط */}

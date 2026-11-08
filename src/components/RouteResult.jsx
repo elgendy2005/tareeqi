@@ -58,13 +58,23 @@ export default function RouteResult({ route }) {
               {i > 0 && (
                 <div className="mb-3 flex items-center gap-2 rounded-xl border-2 border-dashed border-ink/40 bg-paper-2 px-3 py-2 text-sm font-medium">
                   <span aria-hidden="true">🔄</span>
-                  {leg.changeKind === 'train'
-                    ? <>غيّر القطار في <b>{name(leg.from)}</b> واركب قطار {leg.direction === 'جامعة القاهرة' ? 'جامعة القاهرة' : 'محور روض الفرج'}</>
-                    : <>غيّر في <b>{name(leg.from)}</b> للـ{line.ar}</>}
+                  {leg.changeKind === 'train' ? (
+                    <>
+                      غيّر القطار في <b>{name(leg.from)}</b> واركب قطار{' '}
+                      {leg.direction === 'جامعة القاهرة' ? 'جامعة القاهرة' : 'محور روض الفرج'}
+                    </>
+                  ) : (
+                    <>
+                      غيّر في <b>{name(leg.from)}</b> للـ{line.ar}
+                    </>
+                  )}
                 </div>
               )}
               <div className="overflow-hidden rounded-2xl border-2 border-ink bg-card">
-                <div className="flex items-center justify-between px-4 py-2 text-sm font-bold text-white" style={{ background: line.color }}>
+                <div
+                  className="flex items-center justify-between px-4 py-2 text-sm font-bold text-white"
+                  style={{ background: line.color }}
+                >
                   <span>{line.ar}</span>
                   <span className="font-medium">اتجاه {leg.direction}</span>
                 </div>
@@ -78,9 +88,14 @@ export default function RouteResult({ route }) {
                       <summary className="text-sm font-medium text-ink-soft underline decoration-dotted underline-offset-4">
                         المحطات اللي في السكة ({n(middle.length)})
                       </summary>
-                      <ol className="relative mt-3 ms-2 space-y-2 border-s-4 ps-4" style={{ borderColor: line.color }}>
+                      <ol
+                        className="relative mt-3 ms-2 space-y-2 border-s-4 ps-4"
+                        style={{ borderColor: line.color }}
+                      >
                         {middle.map((id) => (
-                          <li key={id} className="text-sm">{name(id)}</li>
+                          <li key={id} className="text-sm">
+                            {name(id)}
+                          </li>
                         ))}
                       </ol>
                     </details>
@@ -94,8 +109,9 @@ export default function RouteResult({ route }) {
 
       <p className="text-xs leading-relaxed text-ink-soft">
         {fareOverMax && 'الرحلة أطول من آخر شريحة؛ اتحسب عليها أعلى سعر. '}
-        السعر حسب شرائح عدد المحطات المعلنة من وزارة النقل (سارية من {FARE_EFFECTIVE}).
-        عدد المحطات بيتحسب من محطة الركوب لحد محطة النزول. الوقت تقريبي، والجدول الفعلي بيتغير حسب الزحمة والتشغيل.
+        السعر حسب شرائح عدد المحطات المعلنة من وزارة النقل (سارية من {FARE_EFFECTIVE}). عدد المحطات
+        بيتحسب من محطة الركوب لحد محطة النزول. الوقت تقريبي، والجدول الفعلي بيتغير حسب الزحمة
+        والتشغيل.
       </p>
     </section>
   )

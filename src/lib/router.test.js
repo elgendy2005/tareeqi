@@ -11,10 +11,16 @@ describe('بيانات الشبكة', () => {
     const n = (id) => SERVICES.find((s) => s.id === id).stations.length
     expect(n('1')).toBe(35)
     expect(n('2')).toBe(20)
-    expect(new Set([...SERVICES.find((s) => s.id === '3A').stations, ...SERVICES.find((s) => s.id === '3B').stations]).size).toBe(34)
+    expect(
+      new Set([
+        ...SERVICES.find((s) => s.id === '3A').stations,
+        ...SERVICES.find((s) => s.id === '3B').stations,
+      ]).size,
+    ).toBe(34)
   })
   it('محطات التبادل الخمسة', () => {
-    for (const id of ['sadat', 'shohadaa', 'nasser', 'attaba', 'cairo-university']) expect(isInterchange(id), id).toBe(true)
+    for (const id of ['sadat', 'shohadaa', 'nasser', 'attaba', 'cairo-university'])
+      expect(isInterchange(id), id).toBe(true)
     expect(isInterchange('maadi')).toBe(false)
     expect(isInterchange('kit-kat')).toBe(false) // تبديل قطار جوه نفس الخط، مش تبادل بين خطين
   })
@@ -22,7 +28,14 @@ describe('بيانات الشبكة', () => {
 
 describe('الأسعار (من 27 مارس 2026)', () => {
   it.each([
-    [1, 10], [9, 10], [10, 12], [16, 12], [17, 15], [23, 15], [24, 20], [39, 20],
+    [1, 10],
+    [9, 10],
+    [10, 12],
+    [16, 12],
+    [17, 15],
+    [23, 15],
+    [24, 20],
+    [39, 20],
   ])('%i محطة = %i جنيه', (stops, price) => expect(fareFor(stops).price).toBe(price))
 })
 
@@ -84,13 +97,14 @@ describe('المسارات', () => {
   it('مفيش تحويلات زيادة عن اللازم لأي زوج محطات (سلامة عامة)', () => {
     const ids = Object.keys(STATIONS)
     let max = 0
-    for (const a of ids) for (const b of ids) {
-      if (a === b) continue
-      const r = findRoute(a, b)
-      expect(r, `${a}->${b}`).not.toBeNull()
-      max = Math.max(max, r.transfers)
-      expect(r.stops).toBeGreaterThan(0)
-    }
+    for (const a of ids)
+      for (const b of ids) {
+        if (a === b) continue
+        const r = findRoute(a, b)
+        expect(r, `${a}->${b}`).not.toBeNull()
+        max = Math.max(max, r.transfers)
+        expect(r.stops).toBeGreaterThan(0)
+      }
     expect(max).toBeLessThanOrEqual(3)
   })
 })

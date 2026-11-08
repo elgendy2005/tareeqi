@@ -25,7 +25,11 @@ export function searchStations(stations, query, limit = 8) {
     let score = -1
     if (ar === q || en === q) score = 0
     else if (ar.startsWith(q) || en.startsWith(q)) score = 1
-    else if (ar.split(' ').some((w) => w.startsWith(q)) || en.split(' ').some((w) => w.startsWith(q))) score = 2
+    else if (
+      ar.split(' ').some((w) => w.startsWith(q)) ||
+      en.split(' ').some((w) => w.startsWith(q))
+    )
+      score = 2
     else if (ar.includes(q) || en.includes(q)) score = 3
     if (score >= 0) scored.push({ st, score })
   }
