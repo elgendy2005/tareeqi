@@ -91,7 +91,7 @@ export const STATIONS = Object.fromEntries(
     s('sudan', 'السودان', 'Sudan'),
     s('imbaba', 'إمبابة', 'Imbaba'),
     s('el-bohy', 'البوهي', 'El-Bohy'),
-    s('el-qawmia', 'القومية', 'El-Qawmia'),
+    s('el-qawmia', 'القومية العربية', 'El-Qawmia'),
     s('ring-road', 'الطريق الدائري', 'Ring Road'),
     s('rod-el-farag-corridor', 'محور روض الفرج', 'Rod El-Farag Corridor'),
     // فرع جامعة القاهرة
