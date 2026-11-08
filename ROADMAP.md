@@ -28,7 +28,7 @@
 - [x] إضافة `CLAUDE.md` (موجود) وتأكد إنه محدّث.
 - [x] إضافة ESLint + Prettier بإعدادات خفيفة، وscripts: `lint`, `format`. (`src/data/` مستثناة من Prettier عمدًا.)
 - [x] إضافة workflow للـ CI على الـ PRs: `npm ci && npm run lint && npm test && npm run build` (`.github/workflows/ci.yml`، ومعاه `format:check`).
-- [ ] تفعيل GitHub Pages (Source: GitHub Actions) والتأكد إن الـ deploy شغال وأن الـ assets بتتحمّل من مسار الـ repo.
+- [x] تفعيل GitHub Pages (Source: GitHub Actions) والتأكد إن الـ deploy شغال وأن الـ assets بتتحمّل من مسار الـ repo. الموقع: <https://elgendy2005.github.io/tareeqi/>
 
 **معيار القبول:** push على `main` ينشر موقع شغال على `https://<user>.github.io/tareeqi/`.
 
