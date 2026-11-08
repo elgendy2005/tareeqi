@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+  --color-paper: #f4eee1;
+  --color-paper-2: #ebe3d1;
+  --color-card: #fbf8f1;
+  --color-ink: #1d1b16;
+  --color-ink-soft: #5b564a;
+  --color-saffron: #f2b134;
+  --color-line-1: #1d5fc9;
+  --color-line-2: #d8322c;
+  --color-line-3: #12904f;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* شبكة خفيفة في خلفية الخريطة */
+.map-grid {
+  background-color: var(--color-card);
+  background-image:
+    linear-gradient(to right, rgb(29 27 22 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(29 27 22 / 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* تذكرة بحافة مقطوعة */
+.ticket {
+  --notch: 10px;
+  background:
+    radial-gradient(circle at 0 50%, var(--color-paper) var(--notch), transparent calc(var(--notch) + 0.5px)) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, var(--color-paper) var(--notch), transparent calc(var(--notch) + 0.5px)) right / 51% 100% no-repeat,
+    var(--color-saffron);
+}
+
+summary { cursor: pointer; }
+summary::-webkit-details-marker { display: none; }
+
+:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 2px; border-radius: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
