@@ -24,8 +24,8 @@
 
 ## المرحلة 0 — تجهيز الريبو
 
-- [ ] `git init` وأول commit، وإنشاء repo على GitHub (اسم مقترح: `tareeqi`).
-- [ ] إضافة `CLAUDE.md` (موجود) وتأكد إنه محدّث.
+- [ ] `git init` وأول commit، وإنشاء repo على GitHub (اسم مقترح: `tareeqi`). — `git init` وأول commit اتعملوا؛ الـ repo على GitHub لسه.
+- [x] إضافة `CLAUDE.md` (موجود) وتأكد إنه محدّث.
 - [ ] إضافة ESLint + Prettier بإعدادات خفيفة، وscripts: `lint`, `format`.
 - [ ] إضافة workflow للـ CI على الـ PRs: `npm ci && npm run lint && npm test && npm run build`.
 - [ ] تفعيل GitHub Pages (Source: GitHub Actions) والتأكد إن الـ deploy شغال وأن الـ assets بتتحمّل من مسار الـ repo.
