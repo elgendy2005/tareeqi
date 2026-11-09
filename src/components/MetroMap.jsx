@@ -33,6 +33,14 @@ const TERMINALS = new Set([
 // محطة ليها رابط مشي لمحطة تانية (زي الإستاد ↔ إستاد القاهرة) — بتتعامل كمحطة تبادل في العرض
 const isLink = (id) => walkLinksAt(id).length > 0
 
+// روابط مشي بين محطتين بنفس الاسم بالظبط → كل محطة بتشاور على توأمها
+const SAME_NAME_TWIN = Object.fromEntries(
+  TRANSFER_LINKS.filter(({ a, b }) => STATIONS[a].ar === STATIONS[b].ar).flatMap(({ a, b }) => [
+    [a, b],
+    [b, a],
+  ]),
+)
+
 // مكان الـ label لكل محطة تبادل/طرف عشان منزحمش الوسط. [anchor, dx, dy]
 const LABEL_POS = {
   sadat: ['start', 14, 20],
@@ -129,13 +137,23 @@ const MapLayers = memo(function MapLayers({ k, unit, route, from, to }) {
   const r = (base) => sized(base, unit, k, 0.55) // دواير بتكبر أبطأ من الزوم
   const fs = (base) => sized(base, unit, k, 0.9)
 
-  const showLabel = (id) => {
+  const wantsLabel = (id) => {
     if (id === from || id === to) return true
     if (routeStations.transfers.has(id)) return true
     if (hasRoute && routeStations.set.has(id)) return k >= 1.5
     if (k >= 2.4) return true
     if (hasRoute) return false
     return isInterchange(id) || TERMINALS.has(id) || isLink(id)
+  }
+  // محطتين منفصلتين بنفس الاسم (زي «عدلي منصور» مترو وLRT) لافتتهم بتتداخل: كفاية واحدة،
+  // إلا لو اللي هتستخبى هي بداية أو نهاية الرحلة وشريكتها لأ
+  const isEnd = (id) => id === from || id === to
+  const showLabel = (id) => {
+    if (!wantsLabel(id)) return false
+    const twin = SAME_NAME_TWIN[id]
+    if (!twin || !wantsLabel(twin)) return true
+    if (isEnd(id) !== isEnd(twin)) return isEnd(id)
+    return id < twin // نفس الأولوية: واحدة ثابتة بس
   }
 
   return (
