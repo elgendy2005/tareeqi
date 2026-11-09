@@ -44,7 +44,7 @@ const SAME_NAME_TWIN = Object.fromEntries(
 // مكان الـ label لكل محطة تبادل/طرف عشان منزحمش الوسط. [anchor, dx, dy]
 const LABEL_POS = {
   sadat: ['start', 14, 20],
-  nasser: ['end', -14, -12],
+  nasser: ['end', -14, 16],
   attaba: ['start', 14, 24],
   shohadaa: ['end', -14, 4],
   'cairo-university': ['end', -14, -6],
