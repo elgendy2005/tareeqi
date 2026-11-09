@@ -5,6 +5,9 @@ import StationPicker from './components/StationPicker.jsx'
 import MetroMap from './components/MetroMap.jsx'
 import RouteResult from './components/RouteResult.jsx'
 import LocateButton from './components/LocateButton.jsx'
+import { addRecent, loadRecent, saveRecent } from './lib/recent.js'
+
+const isStation = (id) => Boolean(id && STATIONS[id])
 
 const EXAMPLES = [
   ['maadi', 'opera'],
@@ -37,6 +40,19 @@ export default function App() {
   }, [from, to])
 
   const route = useMemo(() => (from && to ? findRoute(from, to) : null), [from, to])
+
+  // آخر 5 رحلات — على الجهاز بس (localStorage)
+  const [recent, setRecent] = useState(() => loadRecent(isStation))
+  // لما الرحلة تتغيّر بنضيفها أثناء الـ render (النمط اللي React بتنصح بيه بدل setState جوه effect)
+  const routeKey = route ? `${route.from}>${route.to}` : null
+  const [seenKey, setSeenKey] = useState(null)
+  if (routeKey !== seenKey) {
+    setSeenKey(routeKey)
+    if (route) setRecent((prev) => addRecent(prev, { from: route.from, to: route.to }))
+  }
+  // الـ effect بيكتب في localStorage بس (نظام خارجي)
+  useEffect(() => saveRecent(recent), [recent])
+  const clearRecent = () => setRecent([])
 
   // ضغطة على محطة في الخريطة: أول ضغطة = من، تاني ضغطة = إلى، وبعدها نبدأ من جديد
   const onStationClick = (id) =>
@@ -140,7 +156,33 @@ export default function App() {
           ) : (
             <div className="rounded-2xl border-2 border-dashed border-ink/40 p-4">
               <p className="font-medium">اختار محطتين، أو دوس عليهم في الخريطة.</p>
-              <p className="mt-1 text-sm text-ink-soft">جرّب مثال سريع:</p>
+              {recent.length > 0 && (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm text-ink-soft">آخر رحلاتك:</p>
+                    <button
+                      type="button"
+                      onClick={clearRecent}
+                      className="text-xs text-ink-soft underline underline-offset-2 hover:text-ink"
+                    >
+                      امسح
+                    </button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {recent.map((t) => (
+                      <button
+                        key={t.from + '>' + t.to}
+                        type="button"
+                        onClick={() => setPair({ from: t.from, to: t.to })}
+                        className="rounded-full border-2 border-ink bg-saffron/30 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-saffron/60"
+                      >
+                        {STATIONS[t.from].ar} ← {STATIONS[t.to].ar}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <p className="mt-3 text-sm text-ink-soft">جرّب مثال سريع:</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {EXAMPLES.map(([a, b]) => (
                   <button
