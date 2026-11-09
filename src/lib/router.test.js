@@ -28,7 +28,7 @@ describe('بيانات الشبكة', () => {
 
 describe('الأسعار (من 27 مارس 2026)', () => {
   it.each([
-    [1, 10],
+    [2, 10],
     [9, 10],
     [10, 12],
     [16, 12],
@@ -36,7 +36,34 @@ describe('الأسعار (من 27 مارس 2026)', () => {
     [23, 15],
     [24, 20],
     [39, 20],
-  ])('%i محطة = %i جنيه', (stops, price) => expect(fareFor(stops).price).toBe(price))
+  ])('%i محطة في التذكرة = %i جنيه', (stations, price) =>
+    expect(fareFor(stations).price).toBe(price),
+  )
+
+  it('عدد محطات التذكرة شامل محطة الركوب: 8 خطوات = 9 محطات = 10 جنيه', () => {
+    const r = findRoute('helwan', 'sakanat-el-maadi') // حلوان … ثكنات المعادي
+    expect(r.stops).toBe(9)
+    expect(r.fareStations).toBe(10)
+    expect(r.fare).toBe(12)
+    const r8 = findRoute('helwan', 'tora-el-balad')
+    expect(r8.stops).toBe(8)
+    expect(r8.fareStations).toBe(9)
+    expect(r8.fare).toBe(10)
+  })
+
+  it('أطول رحلة في الشبكة (حلوان → عدلي منصور) = 39 محطة بالظبط، جوه آخر شريحة', () => {
+    const r = findRoute('helwan', 'adly-mansour')
+    expect(r.fareStations).toBe(39)
+    expect(r.fare).toBe(20)
+    expect(r.fareOverMax).toBe(false)
+  })
+
+  it('مفيش رحلة في الشبكة أطول من آخر شريحة', () => {
+    const ids = Object.keys(STATIONS)
+    for (const a of ids)
+      for (const b of ids)
+        if (a !== b) expect(findRoute(a, b).fareOverMax, `${a}->${b}`).toBe(false)
+  })
 })
 
 describe('المسارات', () => {
@@ -65,7 +92,8 @@ describe('المسارات', () => {
     expect(r.legs[0].to).toBe('sadat')
     expect(r.legs[1].changeKind).toBe('line')
     expect(r.stops).toBe(8 + 1)
-    expect(r.fare).toBe(10)
+    expect(r.fareStations).toBe(10) // شامل محطة الركوب → الشريحة التانية
+    expect(r.fare).toBe(12)
   })
 
   it('التحويل بين فرعي الخط 3: إمبابة → جامعة القاهرة بتغيير القطار في الكيت كات', () => {

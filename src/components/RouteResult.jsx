@@ -20,7 +20,7 @@ function Stat({ value, label }) {
 }
 
 export default function RouteResult({ route }) {
-  const { legs, stops, transfers, fare, minutes, fareOverMax } = route
+  const { legs, fareStations, transfers, fare, minutes, fareOverMax } = route
   const first = legs[0]
   const last = legs[legs.length - 1]
 
@@ -42,7 +42,7 @@ export default function RouteResult({ route }) {
           </div>
         </div>
         <div className="mt-3 flex gap-2">
-          <Stat value={n(stops)} label="محطة" />
+          <Stat value={n(fareStations)} label="محطة" />
           <Stat value={n(transfers)} label={transfers === 1 ? 'تحويلة' : 'تحويلات'} />
           <Stat value={`~${n(minutes)}`} label="دقيقة" />
         </div>
@@ -110,8 +110,8 @@ export default function RouteResult({ route }) {
       <p className="text-xs leading-relaxed text-ink-soft">
         {fareOverMax && 'الرحلة أطول من آخر شريحة؛ اتحسب عليها أعلى سعر. '}
         السعر حسب شرائح عدد المحطات المعلنة من وزارة النقل (سارية من {FARE_EFFECTIVE}). عدد المحطات
-        بيتحسب من محطة الركوب لحد محطة النزول. الوقت تقريبي، والجدول الفعلي بيتغير حسب الزحمة
-        والتشغيل.
+        بيتحسب من محطة الركوب لحد محطة النزول، والاتنين محسوبين. الوقت تقريبي، والجدول الفعلي بيتغير
+        حسب الزحمة والتشغيل.
       </p>
     </section>
   )

@@ -64,8 +64,13 @@ class MinHeap {
 
 const key = (station, svc) => `${station}|${svc}`
 
-export function fareFor(stops) {
-  for (const b of FARE_BRACKETS) if (stops <= b.maxStations) return { price: b.price, bracket: b }
+/**
+ * السعر حسب عدد محطات التذكرة. العدد **شامل محطة الركوب ومحطة النزول**
+ * (يعني عدد الخطوات + 1) — المصدر في docs/DATA.md.
+ */
+export function fareFor(stations) {
+  for (const b of FARE_BRACKETS)
+    if (stations <= b.maxStations) return { price: b.price, bracket: b }
   const last = FARE_BRACKETS[FARE_BRACKETS.length - 1]
   return { price: last.price, bracket: last, overMax: true }
 }
@@ -164,13 +169,17 @@ export function findRoute(fromId, toId) {
 
   const stops = detailed.reduce((n, l) => n + l.stops, 0)
   const transfers = detailed.length - 1
-  const fare = fareFor(stops)
+  // عدد محطات التذكرة = كل المحطات من الركوب للنزول شاملة الطرفين.
+  // محطة التحويل بتتحسب مرة واحدة، فالعدد = الخطوات + 1.
+  const fareStations = stops + 1
+  const fare = fareFor(fareStations)
 
   return {
     from: fromId,
     to: toId,
     legs: detailed,
     stops,
+    fareStations,
     transfers,
     fare: fare.price,
     fareOverMax: !!fare.overMax,
