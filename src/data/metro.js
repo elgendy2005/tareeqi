@@ -1,19 +1,21 @@
 // بيانات مترو القاهرة (الخطوط 1 و2 و3) — المصدر: قوائم المحطات الرسمية/ويكيبيديا + وزارة النقل.
 // كل محطة ليها id ثابت (slug) بنستخدمه في الـ graph والـ URL.
 
-const s = (id, ar, en) => ({ id, ar, en })
+// aliases = أسماء قديمة أو إملاء بديل، بتستخدم في البحث بس (مش في العرض).
+const s = (id, ar, en, aliases = []) => ({ id, ar, en, aliases })
 
 export const STATIONS = Object.fromEntries(
   [
     // ---------- الخط الأول: حلوان ↔ المرج الجديدة ----------
     s('helwan', 'حلوان', 'Helwan'),
     s('ain-helwan', 'عين حلوان', 'Ain Helwan'),
-    s('helwan-university', 'جامعة حلوان', 'Helwan University'),
+    // اتغيّر اسمها مع تغيير اسم الجامعة (2026) — المصدر في docs/DATA.md
+    s('helwan-university', 'جامعة العاصمة', 'Capital University', ['جامعة حلوان', 'Helwan University']),
     s('wadi-hof', 'وادي حوف', 'Wadi Hof'),
     s('hadayek-helwan', 'حدائق حلوان', 'Hadayek Helwan'),
     s('el-maasara', 'المعصرة', 'El-Maasara'),
     s('tora-el-asmant', 'طرة الأسمنت', 'Tora El-Asmant'),
-    s('kozzika', 'كوتسيكا', 'Kozzika'),
+    s('kozzika', 'كوتسيكا', 'Kozzika', ['كوتسكا']),
     s('tora-el-balad', 'طرة البلد', 'Tora El-Balad'),
     s('sakanat-el-maadi', 'ثكنات المعادي', 'Sakanat El-Maadi'),
     s('maadi', 'المعادي', 'Maadi'),
@@ -58,7 +60,7 @@ export const STATIONS = Object.fromEntries(
     // الشهداء: موجودة فوق (تبادل مع الخط 1)
     s('masarra', 'مسرة', 'Masarra'),
     s('rod-el-farag', 'روض الفرج', 'Rod El-Farag'),
-    s('st-teresa', 'سانتا تريزا', 'St. Teresa'),
+    s('st-teresa', 'سانت تريزا', 'St. Teresa', ['سانتا تريزا']),
     s('khalafawy', 'الخلفاوي', 'Khalafawy'),
     s('mezallat', 'المظلات', 'Mezallat'),
     s('kolleyyet-el-zeraa', 'كلية الزراعة', 'Kolleyyet El-Zeraa'),

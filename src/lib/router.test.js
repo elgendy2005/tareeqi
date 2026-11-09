@@ -148,6 +148,13 @@ describe('البحث', () => {
     expect(searchStations(all, 'maadi')[0].id).toBe('maadi')
     expect(searchStations(all, 'sadat')[0].id).toBe('sadat')
   })
+  it('بيلاقي بالأسماء القديمة والإملاء البديل (aliases)', () => {
+    const all = Object.values(STATIONS)
+    expect(searchStations(all, 'جامعة حلوان')[0].id).toBe('helwan-university')
+    expect(searchStations(all, 'جامعة العاصمة')[0].id).toBe('helwan-university')
+    expect(searchStations(all, 'سانتا تريزا')[0].id).toBe('st-teresa')
+    expect(searchStations(all, 'كوتسكا')[0].id).toBe('kozzika')
+  })
 })
 
 import { POSITIONS, POSITIONS_BY_SOURCE as P } from '../data/layout.js'

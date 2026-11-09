@@ -20,17 +20,13 @@ export function searchStations(stations, query, limit = 8) {
   if (!q) return stations.slice(0, limit)
   const scored = []
   for (const st of stations) {
-    const ar = normalize(st.ar)
-    const en = normalize(st.en)
+    // الأسماء البديلة (أسماء قديمة / إملاء تاني) بتدخل في البحث بنفس الأولوية
+    const names = [st.ar, st.en, ...(st.aliases || [])].map(normalize)
     let score = -1
-    if (ar === q || en === q) score = 0
-    else if (ar.startsWith(q) || en.startsWith(q)) score = 1
-    else if (
-      ar.split(' ').some((w) => w.startsWith(q)) ||
-      en.split(' ').some((w) => w.startsWith(q))
-    )
-      score = 2
-    else if (ar.includes(q) || en.includes(q)) score = 3
+    if (names.some((x) => x === q)) score = 0
+    else if (names.some((x) => x.startsWith(q))) score = 1
+    else if (names.some((x) => x.split(' ').some((w) => w.startsWith(q)))) score = 2
+    else if (names.some((x) => x.includes(q))) score = 3
     if (score >= 0) scored.push({ st, score })
   }
   scored.sort((a, b) => a.score - b.score || a.st.ar.localeCompare(b.st.ar, 'ar'))
