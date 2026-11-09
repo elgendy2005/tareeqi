@@ -14,7 +14,8 @@
     "format:check": "prettier --check .",
     "test:e2e": "playwright test",
     "test:coverage": "vitest run --coverage",
-    "assets": "vite build && node scripts/assets.mjs"
+    "assets": "vite build && node scripts/assets.mjs",
+    "readme-media": "vite build && node scripts/readme-media.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-sans-arabic": "^5.0.0",
@@ -34,6 +35,7 @@
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
+    "gifenc": "^1.0.3",
     "globals": "^17.14.0",
     "jsdom": "^25.0.1",
     "prettier": "^3.9.10",

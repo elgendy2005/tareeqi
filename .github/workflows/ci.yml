@@ -2,8 +2,8 @@ name: CI
 
 on:
   pull_request:
+  # main كمان: عشان الـ badge وعشان الـ E2E يشتغل على كل نسخة بتتنشر
   push:
-    branches-ignore: [main]
 
 permissions:
   contents: read

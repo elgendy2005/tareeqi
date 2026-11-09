@@ -1,6 +1,23 @@
 # طريقي 🚇 — مترو القاهرة والمونوريل والقطار الخفيف
 
-![لقطة من التطبيق](docs/screenshot.png)
+[![CI](https://github.com/elgendy2005/tareeqi/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/elgendy2005/tareeqi/actions/workflows/ci.yml)
+[![Deploy](https://github.com/elgendy2005/tareeqi/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/elgendy2005/tareeqi/actions/workflows/deploy.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+### [▶ جرّب الموقع: elgendy2005.github.io/tareeqi](https://elgendy2005.github.io/tareeqi/)
+
+![تجربة كاملة: اختيار المعادي والأوبرا بالكتابة، والسعر ١٢ جنيه بتحويلة في السادات، ونص التذكرة بـ ٦ جنيه، وبعدها رحلة من العتبة لمدينة العدالة من الخريطة بتذكرتين مترو ومونوريل](docs/demo.gif)
+
+<table>
+  <tr>
+    <td width="70%"><img src="docs/screenshot-desktop.png" alt="الديسكتوب: رحلة من العتبة لمدينة العدالة بالخط الثالث والمونوريل، بتذكرتين (١٠ + ٨٠ جنيه) ومشي في الإستاد"></td>
+    <td width="30%"><img src="docs/screenshot-mobile.png" alt="الموبايل: رحلة من المعادي للأوبرا بـ ١٢ جنيه وتحويلة واحدة"></td>
+  </tr>
+  <tr>
+    <td align="center">ديسكتوب: مترو + مونوريل</td>
+    <td align="center">موبايل</td>
+  </tr>
+</table>
 
 أداة ويب بتقولك **تركب إيه وتنزل فين وتغيّر عند مين** في مترو القاهرة، وبتحسبلك **سعر التذكرة** حسب الشرائح الرسمية الجديدة (سارية من **27 مارس 2026**).
 
@@ -34,6 +51,7 @@ npm run test:coverage  # نفس الاختبارات + تغطية (أي ملف �
 npm run test:e2e       # Playwright على نسخة الإنتاج (أول مرة: npx playwright install chromium)
 npm run build          # نسخة الإنتاج في dist/
 npm run assets         # يعيد توليد الأيقونات وصورة المعاينة في public/
+npm run readme-media   # يعيد توليد الـ GIF واللقطات في docs/
 ```
 
 ## إزاي بيشتغل
@@ -79,8 +97,12 @@ src/
   lib/search.js      توحيد وبحث النصوص العربية
   lib/geo.js         مسافات جغرافية (Haversine)
   lib/router.test.js اختبارات (Vitest)
-  components/        StationPicker · MetroMap · RouteResult
+  lib/format.js      صياغة الأرقام والجمل (وملخص قارئ الشاشة)
+  components/        StationPicker · MetroMap · RouteResult (+ اختبارات Testing Library)
+e2e/                 اختبارات Playwright على نسخة الإنتاج (المسارات، الأوفلاين، SEO)
+scripts/             توليد الأيقونات وصورة المعاينة وصور الـ README
 docs/DATA.md         مصدر كل بيان + تاريخ المراجعة
+docs/CASE_STUDY.md   دراسة حالة: المشكلة والقرارات والـ trade-offs
 ```
 
 ## النشر على GitHub Pages
