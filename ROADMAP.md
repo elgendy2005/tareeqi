@@ -140,7 +140,10 @@
 
 ## المرحلة 4 — PWA وSEO
 
-- [ ] **PWA**: manifest (اسم، أيقونات 192/512، `dir: rtl`, `lang: ar`) وservice worker يخزّن الـ assets ليشتغل أوفلاين (مثلاً `vite-plugin-pwa`).
+- [x] **PWA**: manifest (اسم، أيقونات 192/512، `dir: rtl`, `lang: ar`) وservice worker يخزّن الـ assets ليشتغل أوفلاين (مثلاً `vite-plugin-pwa`).
+  - `vite-plugin-pwa` 2.0.0 (`generateSW`، و`autoUpdate`). الـ manifest فيه `lang: ar` و`dir: rtl` و`standalone`، وأيقونات 192 و512 وmaskable 512. الـ precache فيه 23 ملف (~445 KB): الـ JS والـ CSS والـ HTML وخطوط woff2 العربي واللاتيني والأيقونات. وأي رابط رحلة بيفتح أوفلاين (`navigateFallback`).
+  - الأيقونات بتتولّد من `favicon.svg` بـ `npm run assets` (`scripts/assets.mjs` بـ Playwright، من غير مكتبة صور زيادة).
+  - `e2e/pwa.spec.js`: الـ manifest وأيقوناته، وفتح `?from=maadi&to=opera` أوفلاين بعد أول زيارة. ولو الـ service worker اتقفل، الاختبار بيفشل.
 - [ ] **SEO وOG**: عنوان ووصف عربي، `og:image` (لقطة شاشة نظيفة 1200×630)، `twitter:card`, `canonical`, `robots.txt`.
 - [ ] مجموعة أيقونات كاملة (favicon.ico, apple-touch-icon).
 - [ ] تحليلات اختيارية تحترم الخصوصية (بدون cookies) — **اسأل أحمد قبل الإضافة**.
