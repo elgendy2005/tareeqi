@@ -19,7 +19,7 @@ export function LineDots({ stationId }) {
   )
 }
 
-export default function StationPicker({ label, value, onChange, placeholder, marker }) {
+export default function StationPicker({ label, value, onChange, placeholder, marker, action }) {
   const uid = useId()
   const inputRef = useRef(null)
   const [open, setOpen] = useState(false)
@@ -54,13 +54,16 @@ export default function StationPicker({ label, value, onChange, placeholder, mar
 
   return (
     <div className="relative">
-      <label
-        htmlFor={`${uid}-input`}
-        className="mb-1.5 flex items-center gap-2 text-sm font-medium text-ink-soft"
-      >
-        {marker}
-        {label}
-      </label>
+      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <label
+          htmlFor={`${uid}-input`}
+          className="flex items-center gap-2 text-sm font-medium text-ink-soft"
+        >
+          {marker}
+          {label}
+        </label>
+        {action}
+      </div>
       <div className="relative">
         <input
           ref={inputRef}

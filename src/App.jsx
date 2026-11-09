@@ -4,6 +4,7 @@ import { findRoute } from './lib/router.js'
 import StationPicker from './components/StationPicker.jsx'
 import MetroMap from './components/MetroMap.jsx'
 import RouteResult from './components/RouteResult.jsx'
+import LocateButton from './components/LocateButton.jsx'
 
 const EXAMPLES = [
   ['maadi', 'opera'],
@@ -79,6 +80,7 @@ export default function App() {
                 label="من محطة"
                 value={from}
                 onChange={setFrom}
+                action={<LocateButton onLocate={setFrom} />}
                 placeholder="اكتب اسم المحطة…"
                 marker={
                   <span
@@ -157,8 +159,17 @@ export default function App() {
       </main>
 
       <footer className="mt-6 text-center text-xs text-ink-soft">
-        الخريطة تخطيطية مش جغرافية · أسعار التذاكر: وزارة النقل (سارية من {FARE_EFFECTIVE}) · مشروع
-        مفتوح المصدر
+        الخريطة تخطيطية مش جغرافية · أسعار التذاكر: وزارة النقل (سارية من {FARE_EFFECTIVE}) ·
+        إحداثيات المحطات: ©{' '}
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          target="_blank"
+          rel="noreferrer"
+          className="underline underline-offset-2"
+        >
+          مساهمو OpenStreetMap
+        </a>{' '}
+        · مشروع مفتوح المصدر
       </footer>
     </div>
   )
