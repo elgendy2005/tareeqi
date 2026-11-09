@@ -6,5 +6,6 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],
-  test: { environment: 'node' },
+  // البيئة الافتراضية node (اختبارات المنطق). اختبارات المكوّنات بتطلب jsdom في أول سطر في الملف.
+  test: { environment: 'node', setupFiles: ['./src/test/setup.js'] },
 })
