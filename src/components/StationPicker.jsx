@@ -94,7 +94,7 @@ export default function StationPicker({ label, value, onChange, placeholder, mar
             setOpen(true)
           }}
           onKeyDown={onKeyDown}
-          className="w-full rounded-xl border-2 border-ink/15 bg-card px-4 py-3 pe-11 text-lg font-medium outline-none transition-colors placeholder:font-normal placeholder:text-ink-soft/60 focus:border-ink"
+          className="w-full rounded-xl border-2 border-ink/15 bg-card px-4 py-3 pe-11 text-lg font-medium outline-none transition-colors placeholder:font-normal placeholder:text-ink-soft/85 focus:border-ink"
         />
         {selected && (
           <button
@@ -118,7 +118,17 @@ export default function StationPicker({ label, value, onChange, placeholder, mar
           role="listbox"
           className="absolute inset-x-0 z-30 mt-1 max-h-72 overflow-auto rounded-xl border-2 border-ink bg-card p-1 shadow-[4px_4px_0_0_rgb(29_27_22/0.9)]"
         >
-          {results.length === 0 && <li className="px-3 py-3 text-ink-soft">مفيش محطة بالاسم ده</li>}
+          {/* أي عنصر جوه listbox لازم يبقى option — فرسالة «مفيش نتايج» option متعطّل */}
+          {results.length === 0 && (
+            <li
+              role="option"
+              aria-disabled="true"
+              aria-selected="false"
+              className="px-3 py-3 text-ink-soft"
+            >
+              مفيش محطة بالاسم ده
+            </li>
+          )}
           {results.map((st, i) => (
             <li
               key={st.id}

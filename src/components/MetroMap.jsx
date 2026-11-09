@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { LINES, STATIONS } from '../data/metro.js'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { LINES, PLANNED_LINES, SERVICES, STATIONS, TRANSFER_LINKS } from '../data/metro.js'
 import {
   LINE_PATHS,
   PLANNED_PATHS,
@@ -10,6 +10,7 @@ import {
 } from '../data/layout.js'
 import { isInterchange, walkLinksAt } from '../lib/router.js'
 import { nearestPoint } from '../lib/hit.js'
+import { minutesText } from '../lib/format.js'
 
 const MIN_K = 1
 const MAX_K = 6
@@ -52,7 +53,53 @@ function labelPos(id, x) {
   return x > 880 ? ['end', -11, 4] : ['start', 11, 4]
 }
 
+/**
+ * بديل نصي للخريطة (مخفي بصريًا): كل خدمة بمحطاتها بالترتيب، وروابط المشي، والخطوط تحت الإنشاء.
+ * الخريطة نفسها مش بتتشغّل بالكيبورد — الاختيار بيتم من خانتي «من» و«إلى».
+ */
+function MapTextAlternative({ id }) {
+  return (
+    <div className="sr-only">
+      {/* الفقرة دي بس هي الـ description بتاع الـ SVG — القوايم طويلة فبتتوصل بالعناوين */}
+      <p id={id}>
+        الخريطة بتعرض الخطوط والمحطات. تقدر تختار المحطات من خانتي «من محطة» و«إلى محطة»، وخطوات
+        الرحلة بتظهر في نتيجة الرحلة.
+      </p>
+      <h2>الخطوط والمحطات بالترتيب</h2>
+      {SERVICES.map((svc) => (
+        <section key={svc.id} aria-label={`${LINES[svc.line].ar}: ${svc.endpoints.join(' – ')}`}>
+          <h3>
+            {LINES[svc.line].ar}: من {svc.endpoints[0]} لـ {svc.endpoints[1]}
+          </h3>
+          <ol>
+            {svc.stations.map((s) => (
+              <li key={s}>{STATIONS[s].ar}</li>
+            ))}
+          </ol>
+        </section>
+      ))}
+      <h3>تحويلات بالمشي بين محطتين منفصلتين</h3>
+      <ul>
+        {TRANSFER_LINKS.map((l) => (
+          <li key={l.a + l.b}>
+            {STATIONS[l.a].ar} ↔ {STATIONS[l.b].ar}، حوالي {minutesText(l.walkMinutes)} مشي (تقدير)
+          </li>
+        ))}
+      </ul>
+      <h3>تحت الإنشاء (مش داخل في التخطيط)</h3>
+      <ul>
+        {PLANNED_LINES.map((p) => (
+          <li key={p.id}>
+            {p.ar}: {p.note}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 export default function MetroMap({ route, from, to, onStationClick }) {
+  const uid = useId()
   const svgRef = useRef(null)
   const pointers = useRef(new Map())
   const gesture = useRef({ moved: false, lastDist: 0 })
@@ -212,7 +259,8 @@ export default function MetroMap({ route, from, to, onStationClick }) {
         viewBox={`0 0 ${VIEWBOX.w} ${VIEWBOX.h}`}
         preserveAspectRatio="xMidYMid meet"
         role="img"
-        aria-label="خريطة تخطيطية لمترو القاهرة: الخطوط الأول والثاني والثالث"
+        aria-label="خريطة تخطيطية لمترو القاهرة والمونوريل والقطار الخفيف"
+        aria-describedby={`${uid}-alt`}
         className="h-full w-full touch-none select-none"
         style={{ cursor: 'grab', direction: 'ltr' }}
         onPointerDown={onPointerDown}
@@ -231,7 +279,7 @@ export default function MetroMap({ route, from, to, onStationClick }) {
             strokeLinecap="round"
             opacity="0.55"
           />
-          <text x="448" y="170" fontSize={fs(15)} fill="#6f97a5" transform="rotate(8 448 170)">
+          <text x="448" y="170" fontSize={fs(15)} fill="#3f6b7a" transform="rotate(8 448 170)">
             النيل
           </text>
 
@@ -275,9 +323,11 @@ export default function MetroMap({ route, from, to, onStationClick }) {
           {PLANNED_PATHS.map((p) => {
             const [ex, ey] = p.points[p.points.length - 1]
             return (
-              <g key={p.id} opacity={hasRoute ? 0.2 : 0.55} pointerEvents="none">
+              <g key={p.id} pointerEvents="none">
                 <title>{`${p.ar} — ${p.note}`}</title>
+                {/* الشفافية على الخط بس — الكلام بيفضل غامق عشان يتقري (التباين) */}
                 <path
+                  opacity={hasRoute ? 0.2 : 0.55}
                   d={toPath(p.points)}
                   fill="none"
                   stroke={p.color}
@@ -292,6 +342,7 @@ export default function MetroMap({ route, from, to, onStationClick }) {
                   fontSize={fs(12)}
                   fontWeight={600}
                   fill="#1d1b16"
+                  opacity={hasRoute ? 0.35 : 1}
                 >
                   {`\u2067${p.ar} · تحت الإنشاء\u2069`}
                 </text>
@@ -420,6 +471,8 @@ export default function MetroMap({ route, from, to, onStationClick }) {
           })}
         </g>
       </svg>
+
+      <MapTextAlternative id={`${uid}-alt`} />
 
       {/* أزرار الزوم */}
       <div className="absolute bottom-3 end-3 flex flex-col overflow-hidden rounded-xl border-2 border-ink bg-card">

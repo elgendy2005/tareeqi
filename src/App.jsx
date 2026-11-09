@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { STATIONS, FARE_EFFECTIVE } from './data/metro.js'
-import { findRoute } from './lib/router.js'
+import { findRoute, routeFare } from './lib/router.js'
+import { routeSummary, tripLabel } from './lib/format.js'
+import { loadCategory, saveCategory } from './lib/fareCategory.js'
 import StationPicker from './components/StationPicker.jsx'
 import MetroMap from './components/MetroMap.jsx'
 import RouteResult from './components/RouteResult.jsx'
@@ -41,6 +43,17 @@ export default function App() {
   }, [from, to])
 
   const route = useMemo(() => (from && to ? findRoute(from, to) : null), [from, to])
+
+  // نوع التذكرة (عادية / نص تذكرة / ذوي الهمم) — بيتفتكر على الجهاز بس
+  const [category, setCategory] = useState(loadCategory)
+  useEffect(() => saveCategory(category), [category])
+
+  // ملخص لقارئ الشاشة. منطقة الـ status دي موجودة دايمًا، عشان أول رحلة تتقري هي كمان.
+  const announcement = route
+    ? routeSummary(route, routeFare(route, category))
+    : from && to && from === to
+      ? 'محطة البداية والنهاية نفس بعض.'
+      : ''
 
   // آخر 5 رحلات — على الجهاز بس (localStorage)
   const [recent, setRecent] = useState(() => loadRecent(isStation))
@@ -102,6 +115,10 @@ export default function App() {
           الخطوط ١ و٢ و٣ + المونوريل و LRT
         </span>
       </header>
+
+      <p role="status" className="sr-only">
+        {announcement}
+      </p>
 
       <main className="grid flex-1 content-start gap-5 lg:grid-cols-[minmax(340px,430px)_1fr]">
         {/* ---------- الاختيار ---------- */}
@@ -167,7 +184,7 @@ export default function App() {
           className="order-2 scroll-mt-4 lg:order-none lg:col-start-1 lg:row-start-2"
         >
           {route ? (
-            <RouteResult route={route} />
+            <RouteResult route={route} category={category} onCategoryChange={setCategory} />
           ) : from && to && from === to ? (
             <p className="rounded-2xl border-2 border-dashed border-ink/40 p-4 text-ink-soft">
               محطة البداية والنهاية نفس بعض 🙂 اختار محطتين مختلفتين.
@@ -201,6 +218,7 @@ export default function App() {
                         key={t.from + '>' + t.to}
                         type="button"
                         onClick={() => setPair({ from: t.from, to: t.to })}
+                        aria-label={tripLabel(t.from, t.to)}
                         className="rounded-full border-2 border-ink bg-saffron/30 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-saffron/60"
                       >
                         {STATIONS[t.from].ar} ← {STATIONS[t.to].ar}
@@ -216,6 +234,7 @@ export default function App() {
                     key={a + b}
                     type="button"
                     onClick={() => setPair({ from: a, to: b })}
+                    aria-label={tripLabel(a, b)}
                     className="rounded-full border-2 border-ink bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:bg-saffron/40"
                   >
                     {STATIONS[a].ar} ← {STATIONS[b].ar}

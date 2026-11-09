@@ -1,34 +1,44 @@
-import { useEffect, useState } from 'react'
+import { useRef } from 'react'
 import { STATIONS, LINES, FARE_SYSTEMS, FARE_CATEGORIES } from '../data/metro.js'
 import { modeAt, routeFare } from '../lib/router.js'
+import { minutesText, n, stopsText } from '../lib/format.js'
 
-// نوع التذكرة اللي المستخدم اختاره بيتفتكر على جهازه بس (تفضيل شخصي — لو الـ storage مقفول، عادي)
-const CATEGORY_KEY = 'tareeqi:fare-category'
-function loadCategory() {
-  try {
-    const v = globalThis.localStorage?.getItem(CATEGORY_KEY)
-    return v && FARE_CATEGORIES[v] ? v : 'regular'
-  } catch {
-    return 'regular'
-  }
-}
-function saveCategory(v) {
-  try {
-    globalThis.localStorage?.setItem(CATEGORY_KEY, v)
-  } catch {
-    /* مش مشكلة */
-  }
-}
+const CATEGORY_KEYS = Object.keys(FARE_CATEGORIES)
 
+/**
+ * نوع التذكرة: radiogroup بنمط WAI-ARIA — زرار واحد بس في ترتيب الـ Tab (المختار)،
+ * والأسهم بتنقل وتختار. الواجهة RTL، فالسهم الشمال = اللي بعده.
+ */
 function CategoryPicker({ value, onChange }) {
+  const refs = useRef({})
+  const onKeyDown = (e) => {
+    const step = { ArrowLeft: 1, ArrowDown: 1, ArrowRight: -1, ArrowUp: -1 }[e.key]
+    let i = CATEGORY_KEYS.indexOf(value)
+    if (step) i = (i + step + CATEGORY_KEYS.length) % CATEGORY_KEYS.length
+    else if (e.key === 'Home') i = 0
+    else if (e.key === 'End') i = CATEGORY_KEYS.length - 1
+    else return
+    e.preventDefault()
+    onChange(CATEGORY_KEYS[i])
+    refs.current[CATEGORY_KEYS[i]]?.focus()
+  }
   return (
-    <div role="radiogroup" aria-label="نوع التذكرة" className="mt-3 flex flex-wrap gap-1.5">
+    <div
+      role="radiogroup"
+      aria-label="نوع التذكرة"
+      onKeyDown={onKeyDown}
+      className="mt-3 flex flex-wrap gap-1.5"
+    >
       {Object.entries(FARE_CATEGORIES).map(([key, c]) => (
         <button
           key={key}
+          ref={(el) => {
+            refs.current[key] = el
+          }}
           type="button"
           role="radio"
           aria-checked={value === key}
+          tabIndex={value === key ? 0 : -1}
           title={c.hint}
           onClick={() => onChange(key)}
           className={`rounded-full border-2 border-ink px-3 py-1 text-xs font-medium transition-colors ${value === key ? 'bg-ink text-paper' : 'bg-card/70 hover:bg-card'}`}
@@ -40,23 +50,12 @@ function CategoryPicker({ value, onChange }) {
   )
 }
 
-const n = (v) => Number(v).toLocaleString('ar-EG')
 const name = (id) => STATIONS[id].ar
 const modeWord = (id) => FARE_SYSTEMS[modeAt(id)].ar // «مترو» / «مونوريل»
 
-function stopsText(count) {
-  if (count === 1) return 'محطة واحدة'
-  if (count === 2) return 'محطتين'
-  if (count <= 10) return `${n(count)} محطات`
-  return `${n(count)} محطة`
-}
-
-function minutesText(m) {
-  if (m === 1) return 'دقيقة'
-  if (m === 2) return 'دقيقتين'
-  if (m <= 10) return `${n(m)} دقايق`
-  return `${n(m)} دقيقة`
-}
+// خلفية عنوان الخط: نفس لون الخط بس أغمق، عشان النص الأبيض يعدّي 4.5:1
+// (الأبيض على لون المونوريل كان 3.3:1 وعلى الخط 3 كان 4.1:1)
+const headerBg = (color) => `color-mix(in srgb, ${color} 75%, black)`
 
 function Stat({ value, label }) {
   return (
@@ -91,7 +90,11 @@ function Walk({ walk, nextMode }) {
   )
 }
 
-export default function RouteResult({ route }) {
+/**
+ * تفاصيل الرحلة. نوع التذكرة (`category`) متخزّن في App عشان ملخص الـ aria-live هناك يقول السعر الصح.
+ * الإعلان لقارئ الشاشة مش هنا: المكوّن ده بيتركّب مع أول رحلة، ومنطقة live لازم تكون موجودة قبل التغيير.
+ */
+export default function RouteResult({ route, category = 'regular', onCategoryChange }) {
   const {
     legs,
     tickets: baseTickets,
@@ -101,8 +104,6 @@ export default function RouteResult({ route }) {
     fareOverMax,
     walkAfter,
   } = route
-  const [category, setCategory] = useState(loadCategory)
-  useEffect(() => saveCategory(category), [category])
   const priced = routeFare(route, category)
   const tickets = priced.tickets
   const fare = priced.total
@@ -111,12 +112,15 @@ export default function RouteResult({ route }) {
   const modes = new Set([...tickets.map((t) => t.mode), modeAt(route.from), modeAt(route.to)])
 
   return (
-    <section aria-live="polite" className="space-y-4">
+    <section aria-labelledby="result-title" className="space-y-4">
+      <h2 id="result-title" className="sr-only">
+        نتيجة الرحلة
+      </h2>
       {/* التذكرة */}
       <div className="ticket rounded-2xl border-2 border-ink p-4">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <div className="text-sm font-medium text-ink/70">
+            <div className="text-sm font-medium text-ink/75">
               {tickets.length === 0 ? 'مفيش تذكرة' : multi ? 'إجمالي التذاكر' : 'سعر التذكرة'}
             </div>
             <div className="text-5xl font-bold leading-none">
@@ -129,7 +133,7 @@ export default function RouteResult({ route }) {
             <div>{name(route.to)}</div>
           </div>
         </div>
-        {baseTickets.length > 0 && <CategoryPicker value={category} onChange={setCategory} />}
+        {baseTickets.length > 0 && <CategoryPicker value={category} onChange={onCategoryChange} />}
         {category !== 'regular' && (
           <p className="mt-2 text-xs text-ink/75">
             {FARE_CATEGORIES[category].hint}.
@@ -165,7 +169,7 @@ export default function RouteResult({ route }) {
       </div>
 
       {/* الخطوات */}
-      <ol className="space-y-3">
+      <ol className="space-y-3" aria-label="خطوات الرحلة">
         {legs.map((leg, i) => {
           const line = LINES[leg.line]
           const middle = leg.stations.slice(1, -1)
@@ -191,7 +195,7 @@ export default function RouteResult({ route }) {
               <div className="overflow-hidden rounded-2xl border-2 border-ink bg-card">
                 <div
                   className="flex items-center justify-between px-4 py-2 text-sm font-bold text-white"
-                  style={{ background: line.color }}
+                  style={{ background: headerBg(line.color) }}
                 >
                   <span>{line.ar}</span>
                   <span className="font-medium">اتجاه {leg.direction}</span>
