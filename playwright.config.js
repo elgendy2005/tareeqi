@@ -23,7 +23,8 @@ export default defineConfig({
   webServer: {
     command: `npm run build && npx vite preview --host 127.0.0.1 --port ${PORT} --strictPort`,
     url: `http://127.0.0.1:${PORT}/`,
-    reuseExistingServer: !process.env.CI,
+    // دايمًا build جديد: لو فيه سيرفر قديم شغال على البورت، الأحسن يفشل بوضوح بدل ما يختبر نسخة قديمة
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 })

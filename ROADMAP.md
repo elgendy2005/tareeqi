@@ -144,7 +144,12 @@
   - `vite-plugin-pwa` 2.0.0 (`generateSW`، و`autoUpdate`). الـ manifest فيه `lang: ar` و`dir: rtl` و`standalone`، وأيقونات 192 و512 وmaskable 512. الـ precache فيه 23 ملف (~445 KB): الـ JS والـ CSS والـ HTML وخطوط woff2 العربي واللاتيني والأيقونات. وأي رابط رحلة بيفتح أوفلاين (`navigateFallback`).
   - الأيقونات بتتولّد من `favicon.svg` بـ `npm run assets` (`scripts/assets.mjs` بـ Playwright، من غير مكتبة صور زيادة).
   - `e2e/pwa.spec.js`: الـ manifest وأيقوناته، وفتح `?from=maadi&to=opera` أوفلاين بعد أول زيارة. ولو الـ service worker اتقفل، الاختبار بيفشل.
-- [ ] **SEO وOG**: عنوان ووصف عربي، `og:image` (لقطة شاشة نظيفة 1200×630)، `twitter:card`, `canonical`, `robots.txt`.
+- [x] **SEO وOG**: عنوان ووصف عربي، `og:image` (لقطة شاشة نظيفة 1200×630)، `twitter:card`, `canonical`, `robots.txt`.
+  - عنوان ووصف بيذكروا المترو والمونوريل والـ LRT، و`canonical`، وOpen Graph وTwitter (`summary_large_image`) بروابط كاملة ونص بديل للصورة.
+  - `og-image.png`: لقطة حقيقية من build الإنتاج لرحلة المعادي ← الأوبرا (1440×756 متصغّرة لـ 1200×630 عشان التذكرة كلها تبان)، وبتتولّد بـ `npm run assets`.
+  - `robots.txt` موجود، بس على GitHub Pages الموقع في مسار فرعي (`/tareeqi/`)، والزواحف بتقرا `robots.txt` من جذر الدومين بس. يعني هيبقى مؤثر بس مع الدومين المخصص (المرحلة 5). ولحد ده، جذر `elgendy2005.github.io` مالوش `robots.txt`، وده معناه إن الفهرسة مسموحة.
+  - `e2e/seo.spec.js`: الـ meta كلها، ومقاس الصورة 1200×630، و`robots.txt`. وكمان Playwright بقى مابيستخدمش سيرفر قديم (`reuseExistingServer: false`)، بعد ما مرة اختبر build قديم من غير ما نحس.
+  - ⚠️ لو الرابط اتغيّر (دومين مخصص)، لازم نحدّث `canonical` و`og:url` و`og:image` في `index.html`.
 - [ ] مجموعة أيقونات كاملة (favicon.ico, apple-touch-icon).
 - [ ] تحليلات اختيارية تحترم الخصوصية (بدون cookies) — **اسأل أحمد قبل الإضافة**.
 
