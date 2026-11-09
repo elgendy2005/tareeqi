@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef, useState } from 'react'
 import { STATIONS, LINES } from '../data/metro.js'
 import { searchStations } from '../lib/search.js'
-import { linesAt } from '../lib/router.js'
+import { linesAt, modeAt } from '../lib/router.js'
 
 const ALL = Object.values(STATIONS)
 
@@ -137,6 +137,11 @@ export default function StationPicker({ label, value, onChange, placeholder, mar
                 <span dir="ltr" className="ms-2 text-sm text-ink-soft">
                   {st.en}
                 </span>
+                {modeAt(st.id) === 'monorail' && (
+                  <span className="ms-2 rounded-full border border-ink/30 px-1.5 text-[11px] font-medium text-ink-soft">
+                    مونوريل
+                  </span>
+                )}
               </span>
               <LineDots stationId={st.id} />
             </li>

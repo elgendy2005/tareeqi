@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LINES, STATIONS } from '../data/metro.js'
-import { LINE_PATHS, POSITIONS, VIEWBOX, toPath } from '../data/layout.js'
-import { isInterchange } from '../lib/router.js'
+import { LINE_PATHS, POSITIONS, VIEWBOX, WALK_PATHS, toPath } from '../data/layout.js'
+import { isInterchange, walkLinksAt } from '../lib/router.js'
 import { nearestPoint } from '../lib/hit.js'
 
 const MIN_K = 1
@@ -15,7 +15,12 @@ const TERMINALS = new Set([
   'shubra-el-kheima',
   'adly-mansour',
   'rod-el-farag-corridor',
+  'm-stadium',
+  'm-justice-city',
 ])
+
+// محطة ليها رابط مشي لمحطة تانية (زي الإستاد ↔ إستاد القاهرة) — بتتعامل كمحطة تبادل في العرض
+const isLink = (id) => walkLinksAt(id).length > 0
 
 // مكان الـ label لكل محطة تبادل/طرف عشان منزحمش الوسط. [anchor, dx, dy]
 const LABEL_POS = {
@@ -26,6 +31,8 @@ const LABEL_POS = {
   'cairo-university': ['end', -14, -6],
   'new-el-marg': ['end', -12, -4],
   'adly-mansour': ['end', -12, -10],
+  stadium: ['end', -12, -8],
+  'm-stadium': ['start', 12, 10],
 }
 
 function labelPos(id, x) {
@@ -159,7 +166,13 @@ export default function MetroMap({ route, from, to, onStationClick }) {
       route.legs.forEach((l, i) => {
         l.stations.forEach((s) => set.add(s))
         if (i > 0) transfers.add(l.from)
+        if (l.walkBefore)
+          [l.walkBefore.from, l.walkBefore.to].forEach((s) => (set.add(s), transfers.add(s)))
       })
+      if (route.walkAfter)
+        [route.walkAfter.from, route.walkAfter.to].forEach((s) => (set.add(s), transfers.add(s)))
+      set.add(route.from)
+      set.add(route.to)
     }
     return { set, transfers }
   }, [route])
@@ -177,7 +190,7 @@ export default function MetroMap({ route, from, to, onStationClick }) {
     if (hasRoute && routeStations.set.has(id)) return k >= 1.5
     if (k >= 2.4) return true
     if (hasRoute) return false
-    return isInterchange(id) || TERMINALS.has(id)
+    return isInterchange(id) || TERMINALS.has(id) || isLink(id)
   }
 
   return (
@@ -212,15 +225,40 @@ export default function MetroMap({ route, from, to, onStationClick }) {
 
           {/* الخطوط الأساسية */}
           {LINE_PATHS.map((p, i) => (
+            <g key={i} opacity={hasRoute ? 0.2 : 1}>
+              <path
+                d={toPath(p.points)}
+                fill="none"
+                stroke={LINES[p.line].color}
+                strokeWidth={r(10)}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* المونوريل: خط مزدوج (لون + نص فاتح) عشان يتميّز عن المترو */}
+              {LINES[p.line].mode === 'monorail' && (
+                <path
+                  d={toPath(p.points)}
+                  fill="none"
+                  stroke="#fbf8f1"
+                  strokeWidth={r(3.5)}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
+            </g>
+          ))}
+
+          {/* روابط المشي بين محطتين منفصلتين */}
+          {WALK_PATHS.map((w) => (
             <path
-              key={i}
-              d={toPath(p.points)}
+              key={w.a + w.b}
+              d={toPath(w.points)}
               fill="none"
-              stroke={LINES[p.line].color}
-              strokeWidth={r(10)}
+              stroke="#1d1b16"
+              strokeWidth={r(3)}
+              strokeDasharray={`${r(4)} ${r(4)}`}
               strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={hasRoute ? 0.2 : 1}
+              opacity={hasRoute ? 0.25 : 0.7}
             />
           ))}
 
@@ -249,10 +287,26 @@ export default function MetroMap({ route, from, to, onStationClick }) {
             )
           })}
 
+          {/* المشي في المسار المختار */}
+          {route &&
+            [...route.legs.map((l) => l.walkBefore), route.walkAfter]
+              .filter(Boolean)
+              .map((w, i) => (
+                <path
+                  key={'walk' + i}
+                  d={toPath([POSITIONS[w.from], POSITIONS[w.to]])}
+                  fill="none"
+                  stroke="#1d1b16"
+                  strokeWidth={r(5)}
+                  strokeDasharray={`${r(5)} ${r(4)}`}
+                  strokeLinecap="round"
+                />
+              ))}
+
           {/* المحطات */}
           {Object.values(STATIONS).map((st) => {
             const [x, y] = POSITIONS[st.id]
-            const inter = isInterchange(st.id)
+            const inter = isInterchange(st.id) || isLink(st.id)
             const onRoute = routeStations.set.has(st.id)
             const dim = hasRoute && !onRoute
             const isFrom = st.id === from
@@ -305,7 +359,8 @@ export default function MetroMap({ route, from, to, onStationClick }) {
                         strokeLinejoin="round"
                         pointerEvents="none"
                       >
-                        {st.ar}
+                        {/* RLI…PDI: النص عربي جوه SVG واخد direction: ltr — العزل بيظبط ترتيب الأسماء المختلطة زي «حي R2» */}
+                        {`⁧${st.ar}⁩`}
                       </text>
                     )
                   })()}
@@ -316,7 +371,7 @@ export default function MetroMap({ route, from, to, onStationClick }) {
       </svg>
 
       {/* أزرار الزوم */}
-      <div className="absolute bottom-3 start-3 flex flex-col overflow-hidden rounded-xl border-2 border-ink bg-card">
+      <div className="absolute bottom-3 end-3 flex flex-col overflow-hidden rounded-xl border-2 border-ink bg-card">
         <button
           type="button"
           aria-label="تكبير"
@@ -344,13 +399,26 @@ export default function MetroMap({ route, from, to, onStationClick }) {
       </div>
 
       {/* مفتاح الخطوط */}
-      <ul className="absolute end-3 top-3 flex gap-3 rounded-xl border-2 border-ink bg-card/95 px-3 py-2 text-xs font-medium">
+      <ul className="absolute end-3 top-3 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-x-3 gap-y-1 rounded-xl border-2 border-ink bg-card/95 px-3 py-2 text-xs font-medium">
         {Object.values(LINES).map((l) => (
           <li key={l.id} className="flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-5 rounded-full" style={{ background: l.color }} />
-            {l.ar}
+            <span
+              className="inline-block h-2.5 w-5 rounded-full"
+              style={{
+                background: l.color,
+                boxShadow:
+                  l.mode === 'monorail'
+                    ? 'inset 0 0 0 3px ' + l.color + ', inset 0 0 0 5px #fbf8f1'
+                    : undefined,
+              }}
+            />
+            {l.legend ?? l.ar}
           </li>
         ))}
+        <li className="flex items-center gap-1.5">
+          <span className="inline-block w-5 border-t-2 border-dashed border-ink" />
+          مشي
+        </li>
       </ul>
     </div>
   )

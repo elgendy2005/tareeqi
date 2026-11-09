@@ -1,13 +1,22 @@
-import { STATIONS, LINES, FARE_EFFECTIVE } from '../data/metro.js'
+import { STATIONS, LINES, FARE_SYSTEMS } from '../data/metro.js'
+import { modeAt } from '../lib/router.js'
 
 const n = (v) => Number(v).toLocaleString('ar-EG')
 const name = (id) => STATIONS[id].ar
+const modeWord = (id) => FARE_SYSTEMS[modeAt(id)].ar // «مترو» / «مونوريل»
 
 function stopsText(count) {
   if (count === 1) return 'محطة واحدة'
   if (count === 2) return 'محطتين'
   if (count <= 10) return `${n(count)} محطات`
   return `${n(count)} محطة`
+}
+
+function minutesText(m) {
+  if (m === 1) return 'دقيقة'
+  if (m === 2) return 'دقيقتين'
+  if (m <= 10) return `${n(m)} دقايق`
+  return `${n(m)} دقيقة`
 }
 
 function Stat({ value, label }) {
@@ -19,10 +28,34 @@ function Stat({ value, label }) {
   )
 }
 
+/** صندوق التحويل/المشي بين الرحلات */
+function Change({ children, icon = '🔄' }) {
+  return (
+    <div className="mb-3 flex items-start gap-2 rounded-xl border-2 border-dashed border-ink/40 bg-paper-2 px-3 py-2 text-sm font-medium leading-relaxed">
+      <span aria-hidden="true">{icon}</span>
+      <span>{children}</span>
+    </div>
+  )
+}
+
+function Walk({ walk, nextMode }) {
+  return (
+    <Change icon="🚶">
+      امشي من محطة {modeWord(walk.from)} <b>{name(walk.from)}</b> لمحطة {modeWord(walk.to)}{' '}
+      <b>{name(walk.to)}</b>، حوالي {minutesText(walk.minutes)} (تقدير).
+      {nextMode && nextMode !== modeAt(walk.from) && (
+        <span className="block text-ink-soft">
+          هتحتاج تذكرة {FARE_SYSTEMS[nextMode].ar} منفصلة.
+        </span>
+      )}
+    </Change>
+  )
+}
+
 export default function RouteResult({ route }) {
-  const { legs, fareStations, transfers, fare, minutes, fareOverMax } = route
-  const first = legs[0]
-  const last = legs[legs.length - 1]
+  const { legs, tickets, fareStations, transfers, fare, minutes, fareOverMax, walkAfter } = route
+  const multi = tickets.length > 1
+  const usesMonorail = tickets.some((t) => t.mode === 'monorail') || modeAt(route.to) === 'monorail'
 
   return (
     <section aria-live="polite" className="space-y-4">
@@ -30,19 +63,42 @@ export default function RouteResult({ route }) {
       <div className="ticket rounded-2xl border-2 border-ink p-4">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <div className="text-sm font-medium text-ink/70">سعر التذكرة</div>
+            <div className="text-sm font-medium text-ink/70">
+              {tickets.length === 0 ? 'مفيش تذكرة' : multi ? 'إجمالي التذاكر' : 'سعر التذكرة'}
+            </div>
             <div className="text-5xl font-bold leading-none">
               {n(fare)} <span className="text-xl font-medium">جنيه</span>
             </div>
           </div>
           <div className="text-end text-sm font-medium text-ink/80">
-            <div>{name(first.from)}</div>
+            <div>{name(route.from)}</div>
             <div aria-hidden="true">↓</div>
-            <div>{name(last.to)}</div>
+            <div>{name(route.to)}</div>
           </div>
         </div>
+        {multi && (
+          <ul className="mt-3 space-y-1 text-sm font-medium" aria-label="التذاكر">
+            {tickets.map((t, i) => (
+              <li key={i} className="flex justify-between gap-2 rounded-lg bg-card/70 px-3 py-1.5">
+                <span>
+                  تذكرة {FARE_SYSTEMS[t.mode].ar} · {stopsText(t.stations)}
+                </span>
+                <span>{n(t.price)} جنيه</span>
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="mt-3 flex gap-2">
-          <Stat value={n(fareStations)} label="محطة" />
+          <Stat
+            value={
+              fareStations != null
+                ? n(fareStations)
+                : tickets.length
+                  ? tickets.map((t) => n(t.stations)).join(' + ')
+                  : '—'
+            }
+            label="محطة"
+          />
           <Stat value={n(transfers)} label={transfers === 1 ? 'تحويلة' : 'تحويلات'} />
           <Stat value={`~${n(minutes)}`} label="دقيقة" />
         </div>
@@ -55,20 +111,23 @@ export default function RouteResult({ route }) {
           const middle = leg.stations.slice(1, -1)
           return (
             <li key={i}>
-              {i > 0 && (
-                <div className="mb-3 flex items-center gap-2 rounded-xl border-2 border-dashed border-ink/40 bg-paper-2 px-3 py-2 text-sm font-medium">
-                  <span aria-hidden="true">🔄</span>
-                  {leg.changeKind === 'train' ? (
-                    <>
-                      غيّر القطار في <b>{name(leg.from)}</b> واركب قطار{' '}
-                      {leg.direction === 'جامعة القاهرة' ? 'جامعة القاهرة' : 'محور روض الفرج'}
-                    </>
-                  ) : (
-                    <>
-                      غيّر في <b>{name(leg.from)}</b> للـ{line.ar}
-                    </>
-                  )}
-                </div>
+              {leg.walkBefore ? (
+                <Walk walk={leg.walkBefore} nextMode={leg.mode} />
+              ) : (
+                i > 0 && (
+                  <Change>
+                    {leg.changeKind === 'train' ? (
+                      <>
+                        غيّر القطار في <b>{name(leg.from)}</b> واركب قطار{' '}
+                        {leg.direction === 'جامعة القاهرة' ? 'جامعة القاهرة' : 'محور روض الفرج'}
+                      </>
+                    ) : (
+                      <>
+                        غيّر في <b>{name(leg.from)}</b> للـ{line.ar}
+                      </>
+                    )}
+                  </Change>
+                )
               )}
               <div className="overflow-hidden rounded-2xl border-2 border-ink bg-card">
                 <div
@@ -105,13 +164,25 @@ export default function RouteResult({ route }) {
             </li>
           )
         })}
+        {walkAfter && (
+          <li>
+            <Walk walk={walkAfter} />
+          </li>
+        )}
       </ol>
 
       <p className="text-xs leading-relaxed text-ink-soft">
         {fareOverMax && 'الرحلة أطول من آخر شريحة؛ اتحسب عليها أعلى سعر. '}
-        السعر حسب شرائح عدد المحطات المعلنة من وزارة النقل (سارية من {FARE_EFFECTIVE}). عدد المحطات
-        بيتحسب من محطة الركوب لحد محطة النزول، والاتنين محسوبين. الوقت تقريبي، والجدول الفعلي بيتغير
-        حسب الزحمة والتشغيل.
+        سعر المترو حسب شرائح عدد المحطات المعلنة من وزارة النقل (سارية من{' '}
+        {FARE_SYSTEMS.metro.effective}). عدد المحطات بيتحسب من محطة الركوب لحد محطة النزول، والاتنين
+        محسوبين. الوقت تقريبي، والجدول الفعلي بيتغير حسب الزحمة والتشغيل.
+        {usesMonorail && (
+          <>
+            {' '}
+            المونوريل ليه تذكرة لوحده بشرائحه (سارية من {FARE_SYSTEMS.monorail.effective}). ده
+            افتراض لأن مفيش تذكرة موحدة معلنة. وزمن المونوريل ومدة المشي في الإستاد تقديريين.
+          </>
+        )}
       </p>
     </section>
   )

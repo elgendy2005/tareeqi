@@ -14,6 +14,7 @@ const EXAMPLES = [
   ['helwan', 'new-el-marg'],
   ['ain-shams', 'cairo-university'],
   ['imbaba', 'heliopolis-square'],
+  ['attaba', 'm-justice-city'],
 ]
 
 function readUrl() {
@@ -92,11 +93,13 @@ export default function App() {
           <img src="./favicon.svg" alt="" className="h-11 w-11" />
           <div>
             <h1 className="text-3xl font-bold leading-none">طريقي</h1>
-            <p className="mt-1 text-sm text-ink-soft">مخطط مترو القاهرة · أقصر مسار وسعر التذكرة</p>
+            <p className="mt-1 text-sm text-ink-soft">
+              مخطط مترو القاهرة والمونوريل · أقصر مسار وسعر التذكرة
+            </p>
           </div>
         </div>
         <span className="hidden rounded-full border-2 border-ink px-3 py-1 text-xs font-medium sm:inline">
-          الخطوط ١ و٢ و٣
+          الخطوط ١ و٢ و٣ + المونوريل
         </span>
       </header>
 

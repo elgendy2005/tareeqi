@@ -135,7 +135,7 @@ export const LINES = {
   1: { id: 1, ar: 'الخط الأول', color: '#1d5fc9', terminals: ['حلوان', 'المرج الجديدة'] },
   2: { id: 2, ar: 'الخط الثاني', color: '#d8322c', terminals: ['المنيب', 'شبرا الخيمة'] },
   3: { id: 3, ar: 'الخط الثالث', color: '#12904f', terminals: ['عدلي منصور', 'روض الفرج / جامعة القاهرة'] },
-  ENM: { id: 'ENM', ar: 'مونوريل شرق النيل', color: '#189ca6', mode: 'monorail', terminals: ['إستاد القاهرة', 'مدينة العدالة'] },
+  ENM: { id: 'ENM', ar: 'مونوريل شرق النيل', legend: 'المونوريل', color: '#189ca6', mode: 'monorail', terminals: ['إستاد القاهرة', 'مدينة العدالة'] },
 }
 
 const L1 = [

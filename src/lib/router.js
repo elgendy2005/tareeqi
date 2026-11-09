@@ -36,6 +36,8 @@ for (const { a, b, walkMinutes } of TRANSFER_LINKS) {
 }
 /** المحطات اللي ممكن تمشي لها من المحطة دي (محطات منفصلة، مش نفس المحطة). */
 export const walkLinksAt = (stationId) => walksFrom[stationId] || []
+/** وسيلة النقل في المحطة ('metro' أو 'monorail') — كل محطة تبع وسيلة واحدة. */
+export const modeAt = (stationId) => modeOf(svcById[servicesAt[stationId][0]])
 const walkMinutes = (a, b) => walkLinksAt(a).find((w) => w.to === b)?.minutes
 
 // ---- طابور أولويات بسيط (min-heap) ----
