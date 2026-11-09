@@ -2,8 +2,12 @@ import { SERVICES, STATIONS, FARE_BRACKETS } from '../data/metro.js'
 
 // ---- ثوابت التقدير ----
 export const TRANSFER_PENALTY = 6 // التحويل بيتحسب بـ 6 محطات عشان نفضّل مسار فيه تحويلات أقل
-const MIN_PER_STOP = 2.2
-const MIN_PER_TRANSFER = 4
+const MIN_PER_STOP_FALLBACK = 2.2 // لأي خدمة مالهاش زمن منشور (تقدير)
+export const MIN_PER_TRANSFER = 4 // مشي + انتظار عند التحويل (تقدير، مش منشور رسميًا)
+
+/** دقايق لكل خطوة على الخدمة دي، محسوبة من زمن الرحلة الكامل المنشور. */
+export const minutesPerStop = (svc) =>
+  svc.minutesEndToEnd ? svc.minutesEndToEnd / (svc.stations.length - 1) : MIN_PER_STOP_FALLBACK
 
 const svcById = Object.fromEntries(SERVICES.map((s) => [s.id, s]))
 const indexOf = Object.fromEntries(
@@ -168,6 +172,7 @@ export function findRoute(fromId, toId) {
   })
 
   const stops = detailed.reduce((n, l) => n + l.stops, 0)
+  const rideMinutes = detailed.reduce((m, l) => m + l.stops * minutesPerStop(svcById[l.service]), 0)
   const transfers = detailed.length - 1
   // عدد محطات التذكرة = كل المحطات من الركوب للنزول شاملة الطرفين.
   // محطة التحويل بتتحسب مرة واحدة، فالعدد = الخطوات + 1.
@@ -183,6 +188,6 @@ export function findRoute(fromId, toId) {
     transfers,
     fare: fare.price,
     fareOverMax: !!fare.overMax,
-    minutes: Math.round(stops * MIN_PER_STOP + transfers * MIN_PER_TRANSFER),
+    minutes: Math.round(rideMinutes + transfers * MIN_PER_TRANSFER),
   }
 }

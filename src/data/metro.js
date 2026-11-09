@@ -140,16 +140,20 @@ const L3_BRANCH_B = ['tawfikia', 'wadi-el-nile', 'gamat-el-dowal', 'boulak-el-da
  * `line` = رقم الخط للعرض واللون. الخط 3 ليه خدمتين (3A و3B).
  * `trunkEnd` = آخر index للجذع المشترك (للخط 3 فقط) — بيساعدنا نحدد اتجاه القطار.
  */
+// `minutesEndToEnd` = زمن الرحلة من أول الخدمة لآخرها، زي ما المشغّل بينشره (المصدر في docs/DATA.md).
+// المحرك بيقسمه على عدد الخطوات عشان يطلع معدل ثابت لكل محطة على الخط ده.
 export const SERVICES = [
-  { id: '1', line: 1, stations: L1, endpoints: ['حلوان', 'المرج الجديدة'] },
-  { id: '2', line: 2, stations: L2, endpoints: ['المنيب', 'شبرا الخيمة'] },
+  { id: '1', line: 1, stations: L1, endpoints: ['حلوان', 'المرج الجديدة'], minutesEndToEnd: 79 },
+  { id: '2', line: 2, stations: L2, endpoints: ['المنيب', 'شبرا الخيمة'], minutesEndToEnd: 38 },
   {
     id: '3A', line: 3, stations: [...L3_TRUNK, ...L3_BRANCH_A],
     endpoints: ['عدلي منصور', 'محور روض الفرج'], trunkEnd: L3_TRUNK.length - 1,
+    minutesEndToEnd: 60,
   },
   {
     id: '3B', line: 3, stations: [...L3_TRUNK, ...L3_BRANCH_B],
     endpoints: ['عدلي منصور', 'جامعة القاهرة'], trunkEnd: L3_TRUNK.length - 1,
+    minutesEndToEnd: 58,
   },
 ]
 

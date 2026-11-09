@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { findRoute, fareFor, isInterchange } from './router.js'
+import { findRoute, fareFor, isInterchange, minutesPerStop, MIN_PER_TRANSFER } from './router.js'
 import { SERVICES, STATIONS } from '../data/metro.js'
 import { searchStations, normalize } from './search.js'
 
@@ -63,6 +63,28 @@ describe('الأسعار (من 27 مارس 2026)', () => {
     for (const a of ids)
       for (const b of ids)
         if (a !== b) expect(findRoute(a, b).fareOverMax, `${a}->${b}`).toBe(false)
+  })
+})
+
+describe('الزمن: متظبط على أزمنة المشغّل المنشورة', () => {
+  it.each([
+    ['helwan', 'new-el-marg', 79], // الخط 1
+    ['shubra-el-kheima', 'el-mounib', 38], // الخط 2
+    ['adly-mansour', 'rod-el-farag-corridor', 60], // الخط 3 — فرع روض الفرج
+    ['adly-mansour', 'cairo-university', 58], // الخط 3 — فرع جامعة القاهرة
+  ])('%s → %s ≈ %i دقيقة', (a, b, published) => {
+    const r = findRoute(a, b)
+    expect(r.transfers).toBe(0)
+    expect(r.minutes).toBe(published)
+  })
+
+  it('التحويلة بتزوّد زمن ثابت', () => {
+    const r = findRoute('maadi', 'opera')
+    const ride = r.legs.reduce(
+      (m, l) => m + l.stops * minutesPerStop(SERVICES.find((s) => s.id === l.service)),
+      0,
+    )
+    expect(r.minutes).toBe(Math.round(ride + MIN_PER_TRANSFER))
   })
 })
 
