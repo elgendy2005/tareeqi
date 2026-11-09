@@ -257,7 +257,18 @@ export const FARE_BRACKETS = [
 // TODO(verify) مفيش مصدر بيذكر تذكرة موحدة مترو + مونوريل، فبنفترض تذكرتين منفصلتين.
 // TODO(verify) عد محطات المونوريل: بنفترض إنه شامل الطرفين زي المترو («حتى 22 محطة» = الخط كله).
 export const FARE_SYSTEMS = {
-  metro: { ar: 'مترو', effective: FARE_EFFECTIVE, brackets: FARE_BRACKETS },
+  metro: {
+    ar: 'مترو',
+    effective: FARE_EFFECTIVE,
+    brackets: FARE_BRACKETS,
+    // الفئات الخاصة — اليوم السابع، 27 مارس 2026 (docs/DATA.md)
+    concessions: {
+      // نص تذكرة: كبار السن وأفراد القوات المسلحة والشرطة — بنفس حدود الشرايح
+      senior: { brackets: FARE_BRACKETS.map((b, i) => ({ ...b, price: [5, 6, 8, 10][i] })) },
+      // ذوي الهمم والمحاربين: تذكرة موحدة
+      disabled: { flat: 5 },
+    },
+  },
   // TODO(verify) عد محطات LRT شامل الطرفين (افتراض زي المترو). «أكثر من 7» = مفتوح.
   lrt: {
     ar: 'LRT',
@@ -277,5 +288,17 @@ export const FARE_SYSTEMS = {
       { maxStations: 15, price: 55 },
       { maxStations: 22, price: 80 },
     ],
+    // نص تذكرة لكبار السن (60+) وذوي الهمم — Egypt Independent، 9 مايو 2026 (docs/DATA.md)
+    concessions: {
+      senior: { brackets: [5, 10, 15, 22].map((maxStations, i) => ({ maxStations, price: [10, 20, 30, 40][i] })) },
+      disabled: { brackets: [5, 10, 15, 22].map((maxStations, i) => ({ maxStations, price: [10, 20, 30, 40][i] })) },
+    },
   },
+}
+
+/** أنواع التذاكر اللي المستخدم يقدر يختار منها. الـ LRT مالوش أسعار مخفضة معلنة. */
+export const FARE_CATEGORIES = {
+  regular: { ar: 'عادية' },
+  senior: { ar: 'نص تذكرة', hint: 'كبار السن والقوات المسلحة والشرطة' },
+  disabled: { ar: 'ذوي الهمم', hint: 'ذوي الهمم والمحاربين' },
 }

@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { findRoute, fareFor, isInterchange, minutesPerStop, MIN_PER_TRANSFER } from './router.js'
+import {
+  findRoute,
+  fareFor,
+  isInterchange,
+  minutesPerStop,
+  MIN_PER_TRANSFER,
+  ticketPrice,
+  routeFare,
+} from './router.js'
 import { SERVICES, STATIONS } from '../data/metro.js'
 import { searchStations, normalize } from './search.js'
 
@@ -312,5 +320,56 @@ describe('القطار الكهربائي الخفيف LRT', () => {
 
   it('الزمن: 4.8 دقيقة لكل محطة على LRT (عدلي منصور ← بدر = 24 دقيقة منشورة)', () => {
     expect(findRoute('l-adly-mansour', 'l-badr').minutes).toBe(24)
+  })
+})
+
+describe('الفئات الخاصة (نص تذكرة / ذوي الهمم)', () => {
+  const t = (mode, stations) => ({ mode, stations })
+  it.each([
+    [9, 5],
+    [10, 6],
+    [16, 6],
+    [17, 8],
+    [23, 8],
+    [24, 10],
+    [39, 10],
+  ])('مترو نص تذكرة: %i محطة = %i جنيه', (stations, price) =>
+    expect(ticketPrice(t('metro', stations), 'senior')).toEqual({ price, discounted: true }),
+  )
+
+  it('مترو ذوي الهمم: 5 جنيه موحدة لأي عدد محطات', () => {
+    for (const s of [2, 9, 16, 39]) expect(ticketPrice(t('metro', s), 'disabled').price).toBe(5)
+  })
+
+  it.each([
+    [5, 10],
+    [10, 20],
+    [15, 30],
+    [22, 40],
+  ])('مونوريل نص تذكرة / ذوي الهمم: %i محطة = %i جنيه', (stations, price) => {
+    expect(ticketPrice(t('monorail', stations), 'senior').price).toBe(price)
+    expect(ticketPrice(t('monorail', stations), 'disabled').price).toBe(price)
+  })
+
+  it('LRT مالوش خصم معلن: السعر العادي و discounted = false', () => {
+    expect(ticketPrice(t('lrt', 9), 'senior')).toEqual({ price: 20, discounted: false })
+  })
+
+  it('العادي = نفس fareFor', () => {
+    expect(ticketPrice(t('metro', 10))).toEqual({ price: 12, discounted: false })
+  })
+
+  it('routeFare: رحلة مترو + مونوريل بنص تذكرة', () => {
+    const r = findRoute('attaba', 'm-justice-city') // مترو 7 محطات + مونوريل 22
+    expect(routeFare(r).total).toBe(90)
+    const s = routeFare(r, 'senior')
+    expect(s.tickets.map((x) => x.price)).toEqual([5, 40])
+    expect(s.total).toBe(45)
+    expect(s.missingDiscount).toBe(false)
+  })
+
+  it('routeFare: فيه LRT → missingDiscount', () => {
+    const r = findRoute('attaba', 'l-capital-airport')
+    expect(routeFare(r, 'disabled')).toMatchObject({ total: 5 + 20, missingDiscount: true })
   })
 })

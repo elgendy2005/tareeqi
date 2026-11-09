@@ -1,5 +1,44 @@
-import { STATIONS, LINES, FARE_SYSTEMS } from '../data/metro.js'
-import { modeAt } from '../lib/router.js'
+import { useEffect, useState } from 'react'
+import { STATIONS, LINES, FARE_SYSTEMS, FARE_CATEGORIES } from '../data/metro.js'
+import { modeAt, routeFare } from '../lib/router.js'
+
+// نوع التذكرة اللي المستخدم اختاره بيتفتكر على جهازه بس (تفضيل شخصي — لو الـ storage مقفول، عادي)
+const CATEGORY_KEY = 'tareeqi:fare-category'
+function loadCategory() {
+  try {
+    const v = globalThis.localStorage?.getItem(CATEGORY_KEY)
+    return v && FARE_CATEGORIES[v] ? v : 'regular'
+  } catch {
+    return 'regular'
+  }
+}
+function saveCategory(v) {
+  try {
+    globalThis.localStorage?.setItem(CATEGORY_KEY, v)
+  } catch {
+    /* مش مشكلة */
+  }
+}
+
+function CategoryPicker({ value, onChange }) {
+  return (
+    <div role="radiogroup" aria-label="نوع التذكرة" className="mt-3 flex flex-wrap gap-1.5">
+      {Object.entries(FARE_CATEGORIES).map(([key, c]) => (
+        <button
+          key={key}
+          type="button"
+          role="radio"
+          aria-checked={value === key}
+          title={c.hint}
+          onClick={() => onChange(key)}
+          className={`rounded-full border-2 border-ink px-3 py-1 text-xs font-medium transition-colors ${value === key ? 'bg-ink text-paper' : 'bg-card/70 hover:bg-card'}`}
+        >
+          {c.ar}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 const n = (v) => Number(v).toLocaleString('ar-EG')
 const name = (id) => STATIONS[id].ar
@@ -53,8 +92,21 @@ function Walk({ walk, nextMode }) {
 }
 
 export default function RouteResult({ route }) {
-  const { legs, tickets, fareStations, transfers, fare, minutes, fareOverMax, walkAfter } = route
-  const multi = tickets.length > 1
+  const {
+    legs,
+    tickets: baseTickets,
+    fareStations,
+    transfers,
+    minutes,
+    fareOverMax,
+    walkAfter,
+  } = route
+  const [category, setCategory] = useState(loadCategory)
+  useEffect(() => saveCategory(category), [category])
+  const priced = routeFare(route, category)
+  const tickets = priced.tickets
+  const fare = priced.total
+  const multi = baseTickets.length > 1
   // الوسائل غير المترو اللي في الرحلة (عشان نوضّح الافتراضات بتاعتها)
   const modes = new Set([...tickets.map((t) => t.mode), modeAt(route.from), modeAt(route.to)])
 
@@ -77,6 +129,13 @@ export default function RouteResult({ route }) {
             <div>{name(route.to)}</div>
           </div>
         </div>
+        {baseTickets.length > 0 && <CategoryPicker value={category} onChange={setCategory} />}
+        {category !== 'regular' && (
+          <p className="mt-2 text-xs text-ink/75">
+            {FARE_CATEGORIES[category].hint}.
+            {priced.missingDiscount && ' الـ LRT مالوش سعر مخفض معلن، فاتحسب بالسعر العادي.'}
+          </p>
+        )}
         {multi && (
           <ul className="mt-3 space-y-1 text-sm font-medium" aria-label="التذاكر">
             {tickets.map((t, i) => (

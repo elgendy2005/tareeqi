@@ -89,10 +89,34 @@ const key = (station, svc) => `${station}|${svc}`
  * (يعني عدد الخطوات + 1) — المصدر في docs/DATA.md. كل وسيلة ليها شرايحها (`FARE_SYSTEMS`).
  */
 export function fareFor(stations, mode = 'metro') {
-  const brackets = FARE_SYSTEMS[mode].brackets
+  return priceFromBrackets(FARE_SYSTEMS[mode].brackets, stations)
+}
+
+function priceFromBrackets(brackets, stations) {
   for (const b of brackets) if (stations <= b.maxStations) return { price: b.price, bracket: b }
   const last = brackets[brackets.length - 1]
   return { price: last.price, bracket: last, overMax: true }
+}
+
+/**
+ * سعر تذكرة واحدة لفئة معيّنة (عادية / نص تذكرة / ذوي الهمم).
+ * لو الوسيلة مالهاش سعر مخفض معلن للفئة دي، بيرجع السعر العادي و`discounted: false`.
+ */
+export function ticketPrice({ mode, stations }, category = 'regular') {
+  const c = category !== 'regular' ? FARE_SYSTEMS[mode].concessions?.[category] : null
+  if (!c) return { price: fareFor(stations, mode).price, discounted: false }
+  if (c.flat != null) return { price: c.flat, discounted: true }
+  return { price: priceFromBrackets(c.brackets, stations).price, discounted: true }
+}
+
+/** إجمالي الرحلة لفئة معيّنة + هل فيه تذكرة اتحسبت بالسعر العادي لعدم وجود خصم معلن. */
+export function routeFare(route, category = 'regular') {
+  const prices = route.tickets.map((t) => ({ ...t, ...ticketPrice(t, category) }))
+  return {
+    total: prices.reduce((s, t) => s + t.price, 0),
+    tickets: prices,
+    missingDiscount: category !== 'regular' && prices.some((t) => !t.discounted),
+  }
 }
 
 function directionLabel(svc, iFrom, iTo) {
