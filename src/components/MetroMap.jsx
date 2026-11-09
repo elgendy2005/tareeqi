@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { LINES, PLANNED_LINES, SERVICES, STATIONS, TRANSFER_LINKS } from '../data/metro.js'
 import {
   LINE_PATHS,
@@ -98,7 +98,252 @@ function MapTextAlternative({ id }) {
   )
 }
 
-export default function MetroMap({ route, from, to, onStationClick }) {
+/** حجم عنصر على الخريطة: بيكبر مع `unit` (شاشات صغيرة) وبيصغر أبطأ من الزوم */
+const sized = (base, unit, k, power) => (base * unit) / Math.pow(k, power)
+
+/**
+ * كل اللي بيترسم جوه الخريطة. متغلّف بـ memo: السحب بيغيّر الإزاحة (x/y) بس في الأب،
+ * فالمحطات والخطوط مابيتعادش رسمها غير لما الزوم أو المسار أو الاختيار يتغيّر.
+ */
+const MapLayers = memo(function MapLayers({ k, unit, route, from, to }) {
+  // ---- بيانات المسار المعروض ----
+  const routeStations = useMemo(() => {
+    const set = new Set()
+    const transfers = new Set()
+    if (route) {
+      route.legs.forEach((l, i) => {
+        l.stations.forEach((s) => set.add(s))
+        if (i > 0) transfers.add(l.from)
+        if (l.walkBefore)
+          [l.walkBefore.from, l.walkBefore.to].forEach((s) => (set.add(s), transfers.add(s)))
+      })
+      if (route.walkAfter)
+        [route.walkAfter.from, route.walkAfter.to].forEach((s) => (set.add(s), transfers.add(s)))
+      set.add(route.from)
+      set.add(route.to)
+    }
+    return { set, transfers }
+  }, [route])
+
+  const hasRoute = !!route
+  const r = (base) => sized(base, unit, k, 0.55) // دواير بتكبر أبطأ من الزوم
+  const fs = (base) => sized(base, unit, k, 0.9)
+
+  const showLabel = (id) => {
+    if (id === from || id === to) return true
+    if (routeStations.transfers.has(id)) return true
+    if (hasRoute && routeStations.set.has(id)) return k >= 1.5
+    if (k >= 2.4) return true
+    if (hasRoute) return false
+    return isInterchange(id) || TERMINALS.has(id) || isLink(id)
+  }
+
+  return (
+    <>
+      {/* النيل (زخرفة) */}
+      <path
+        d="M 440 30 C 420 180, 450 300, 410 440 C 380 560, 330 740, 300 920"
+        fill="none"
+        stroke="#b9d3dc"
+        strokeWidth="26"
+        strokeLinecap="round"
+        opacity="0.55"
+      />
+      <text x="448" y="170" fontSize={fs(15)} fill="#3f6b7a" transform="rotate(8 448 170)">
+        النيل
+      </text>
+
+      {/* الخطوط الأساسية */}
+      {LINE_PATHS.map((p, i) => (
+        <g key={i} opacity={hasRoute ? 0.2 : 1}>
+          <path
+            d={toPath(p.points)}
+            fill="none"
+            stroke={LINES[p.line].color}
+            strokeWidth={r(10)}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* المونوريل: خط مزدوج (لون + نص فاتح) عشان يتميّز عن المترو */}
+          {LINES[p.line].mode === 'monorail' && (
+            <path
+              d={toPath(p.points)}
+              fill="none"
+              stroke="#fbf8f1"
+              strokeWidth={r(3.5)}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+          {/* LRT: شكل سكة حديد (نص متقطع فاتح) */}
+          {LINES[p.line].mode === 'lrt' && (
+            <path
+              d={toPath(p.points)}
+              fill="none"
+              stroke="#fbf8f1"
+              strokeWidth={r(3)}
+              strokeDasharray={`${r(7)} ${r(7)}`}
+              strokeLinejoin="round"
+            />
+          )}
+        </g>
+      ))}
+
+      {/* خطوط تحت الإنشاء: متقطعة وباهتة، ومش قابلة للاختيار */}
+      {PLANNED_PATHS.map((p) => {
+        const [ex, ey] = p.points[p.points.length - 1]
+        return (
+          <g key={p.id} pointerEvents="none">
+            <title>{`${p.ar} — ${p.note}`}</title>
+            {/* الشفافية على الخط بس — الكلام بيفضل غامق عشان يتقري (التباين) */}
+            <path
+              opacity={hasRoute ? 0.2 : 0.55}
+              d={toPath(p.points)}
+              fill="none"
+              stroke={p.color}
+              strokeWidth={r(6)}
+              strokeDasharray={`${r(10)} ${r(8)}`}
+              strokeLinecap="round"
+            />
+            <text
+              x={ex}
+              y={ey - (16 * unit) / Math.pow(k, 0.55)}
+              textAnchor="start"
+              fontSize={fs(12)}
+              fontWeight={600}
+              fill="#1d1b16"
+              opacity={hasRoute ? 0.35 : 1}
+            >
+              {`\u2067${p.ar} · تحت الإنشاء\u2069`}
+            </text>
+          </g>
+        )
+      })}
+
+      {/* روابط المشي بين محطتين منفصلتين */}
+      {WALK_PATHS.map((w) => (
+        <path
+          key={w.a + w.b}
+          d={toPath(w.points)}
+          fill="none"
+          stroke="#1d1b16"
+          strokeWidth={r(3)}
+          strokeDasharray={`${r(4)} ${r(4)}`}
+          strokeLinecap="round"
+          opacity={hasRoute ? 0.25 : 0.7}
+        />
+      ))}
+
+      {/* المسار المختار */}
+      {route?.legs.map((leg, i) => {
+        const d = toPath(leg.stations.map((s) => POSITIONS[s]))
+        return (
+          <g key={i}>
+            <path
+              d={d}
+              fill="none"
+              stroke="#fbf8f1"
+              strokeWidth={r(20)}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d={d}
+              fill="none"
+              stroke={LINES[leg.line].color}
+              strokeWidth={r(12)}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </g>
+        )
+      })}
+
+      {/* المشي في المسار المختار */}
+      {route &&
+        [...route.legs.map((l) => l.walkBefore), route.walkAfter]
+          .filter(Boolean)
+          .map((w, i) => (
+            <path
+              key={'walk' + i}
+              d={toPath([POSITIONS[w.from], POSITIONS[w.to]])}
+              fill="none"
+              stroke="#1d1b16"
+              strokeWidth={r(5)}
+              strokeDasharray={`${r(5)} ${r(4)}`}
+              strokeLinecap="round"
+            />
+          ))}
+
+      {/* المحطات */}
+      {Object.values(STATIONS).map((st) => {
+        const [x, y] = POSITIONS[st.id]
+        const inter = isInterchange(st.id) || isLink(st.id)
+        const onRoute = routeStations.set.has(st.id)
+        const dim = hasRoute && !onRoute
+        const isFrom = st.id === from
+        const isTo = st.id === to
+        const radius = isFrom || isTo ? r(11) : inter ? r(9) : onRoute ? r(6.5) : r(5)
+        const lineColor =
+          LINES[route?.legs.find((l) => l.stations.includes(st.id))?.line ?? 1].color
+        return (
+          <g key={st.id} opacity={dim ? 0.35 : 1} style={{ cursor: 'pointer' }}>
+            <title>{`${st.ar} — ${st.en}`}</title>
+            <circle cx={x} cy={y} r={r(15)} fill="transparent" />
+            <circle
+              cx={x}
+              cy={y}
+              r={radius}
+              fill={isFrom ? '#1d1b16' : isTo ? '#f2b134' : '#fbf8f1'}
+              stroke={
+                isFrom
+                  ? '#f2b134'
+                  : isTo
+                    ? '#1d1b16'
+                    : inter
+                      ? '#1d1b16'
+                      : onRoute
+                        ? lineColor
+                        : '#5b564a'
+              }
+              strokeWidth={r(inter || isFrom || isTo ? 4 : 2.5)}
+            />
+            {showLabel(st.id) &&
+              (() => {
+                const [anchor, dx, dy] = labelPos(st.id, x)
+                const strong =
+                  isFrom ||
+                  isTo ||
+                  inter ||
+                  TERMINALS.has(st.id) ||
+                  routeStations.transfers.has(st.id)
+                return (
+                  <text
+                    x={x + (dx * unit) / Math.pow(k, 0.55)}
+                    y={y + (dy * unit) / Math.pow(k, 0.55)}
+                    textAnchor={anchor}
+                    fontSize={fs(strong ? 15 : 12.5)}
+                    fontWeight={strong ? 700 : 500}
+                    fill="#1d1b16"
+                    stroke="#fbf8f1"
+                    strokeWidth={fs(4)}
+                    paintOrder="stroke"
+                    strokeLinejoin="round"
+                    pointerEvents="none"
+                  >
+                    {/* RLI…PDI: النص عربي جوه SVG واخد direction: ltr — العزل بيظبط ترتيب الأسماء المختلطة زي «حي R2» */}
+                    {`\u2067${st.ar}\u2069`}
+                  </text>
+                )
+              })()}
+          </g>
+        )
+      })}
+    </>
+  )
+})
+
+function MetroMap({ route, from, to, onStationClick }) {
   const uid = useId()
   const svgRef = useRef(null)
   const pointers = useRef(new Map())
@@ -211,46 +456,20 @@ export default function MetroMap({ route, from, to, onStationClick }) {
   const onMapClick = (e) => {
     if (gesture.current.moved) return
     const p = toSvg(e.clientX, e.clientY)
-    const id = nearestPoint(POSITIONS, (p.x - t.x) / t.k, (p.y - t.y) / t.k, r(15))
+    const id = nearestPoint(
+      POSITIONS,
+      (p.x - t.x) / t.k,
+      (p.y - t.y) / t.k,
+      sized(15, unit, t.k, 0.55),
+    )
     if (id) onStationClick(id)
   }
 
   const zoomCenter = (f) => zoomAt(VIEWBOX.w / 2, VIEWBOX.h / 2, f)
 
-  // ---- بيانات المسار المعروض ----
-  const routeStations = useMemo(() => {
-    const set = new Set()
-    const transfers = new Set()
-    if (route) {
-      route.legs.forEach((l, i) => {
-        l.stations.forEach((s) => set.add(s))
-        if (i > 0) transfers.add(l.from)
-        if (l.walkBefore)
-          [l.walkBefore.from, l.walkBefore.to].forEach((s) => (set.add(s), transfers.add(s)))
-      })
-      if (route.walkAfter)
-        [route.walkAfter.from, route.walkAfter.to].forEach((s) => (set.add(s), transfers.add(s)))
-      set.add(route.from)
-      set.add(route.to)
-    }
-    return { set, transfers }
-  }, [route])
-
   const k = t.k
-  const hasRoute = !!route
   // على الموبايل الخريطة بتتصغّر، فبنكبّر العناصر عشان تفضل مقروءة
   const unit = clamp(0.62 / screenScale, 1, 2.4)
-  const r = (base) => (base * unit) / Math.pow(k, 0.55) // دواير بتكبر أبطأ من الزوم
-  const fs = (base) => (base * unit) / Math.pow(k, 0.9)
-
-  const showLabel = (id) => {
-    if (id === from || id === to) return true
-    if (routeStations.transfers.has(id)) return true
-    if (hasRoute && routeStations.set.has(id)) return k >= 1.5
-    if (k >= 2.4) return true
-    if (hasRoute) return false
-    return isInterchange(id) || TERMINALS.has(id) || isLink(id)
-  }
 
   return (
     <div className="map-grid relative h-full w-full overflow-hidden rounded-2xl border-2 border-ink">
@@ -270,205 +489,7 @@ export default function MetroMap({ route, from, to, onStationClick }) {
         onClick={onMapClick}
       >
         <g transform={`translate(${t.x} ${t.y}) scale(${t.k})`}>
-          {/* النيل (زخرفة) */}
-          <path
-            d="M 440 30 C 420 180, 450 300, 410 440 C 380 560, 330 740, 300 920"
-            fill="none"
-            stroke="#b9d3dc"
-            strokeWidth="26"
-            strokeLinecap="round"
-            opacity="0.55"
-          />
-          <text x="448" y="170" fontSize={fs(15)} fill="#3f6b7a" transform="rotate(8 448 170)">
-            النيل
-          </text>
-
-          {/* الخطوط الأساسية */}
-          {LINE_PATHS.map((p, i) => (
-            <g key={i} opacity={hasRoute ? 0.2 : 1}>
-              <path
-                d={toPath(p.points)}
-                fill="none"
-                stroke={LINES[p.line].color}
-                strokeWidth={r(10)}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {/* المونوريل: خط مزدوج (لون + نص فاتح) عشان يتميّز عن المترو */}
-              {LINES[p.line].mode === 'monorail' && (
-                <path
-                  d={toPath(p.points)}
-                  fill="none"
-                  stroke="#fbf8f1"
-                  strokeWidth={r(3.5)}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              )}
-              {/* LRT: شكل سكة حديد (نص متقطع فاتح) */}
-              {LINES[p.line].mode === 'lrt' && (
-                <path
-                  d={toPath(p.points)}
-                  fill="none"
-                  stroke="#fbf8f1"
-                  strokeWidth={r(3)}
-                  strokeDasharray={`${r(7)} ${r(7)}`}
-                  strokeLinejoin="round"
-                />
-              )}
-            </g>
-          ))}
-
-          {/* خطوط تحت الإنشاء: متقطعة وباهتة، ومش قابلة للاختيار */}
-          {PLANNED_PATHS.map((p) => {
-            const [ex, ey] = p.points[p.points.length - 1]
-            return (
-              <g key={p.id} pointerEvents="none">
-                <title>{`${p.ar} — ${p.note}`}</title>
-                {/* الشفافية على الخط بس — الكلام بيفضل غامق عشان يتقري (التباين) */}
-                <path
-                  opacity={hasRoute ? 0.2 : 0.55}
-                  d={toPath(p.points)}
-                  fill="none"
-                  stroke={p.color}
-                  strokeWidth={r(6)}
-                  strokeDasharray={`${r(10)} ${r(8)}`}
-                  strokeLinecap="round"
-                />
-                <text
-                  x={ex}
-                  y={ey - (16 * unit) / Math.pow(k, 0.55)}
-                  textAnchor="start"
-                  fontSize={fs(12)}
-                  fontWeight={600}
-                  fill="#1d1b16"
-                  opacity={hasRoute ? 0.35 : 1}
-                >
-                  {`\u2067${p.ar} · تحت الإنشاء\u2069`}
-                </text>
-              </g>
-            )
-          })}
-
-          {/* روابط المشي بين محطتين منفصلتين */}
-          {WALK_PATHS.map((w) => (
-            <path
-              key={w.a + w.b}
-              d={toPath(w.points)}
-              fill="none"
-              stroke="#1d1b16"
-              strokeWidth={r(3)}
-              strokeDasharray={`${r(4)} ${r(4)}`}
-              strokeLinecap="round"
-              opacity={hasRoute ? 0.25 : 0.7}
-            />
-          ))}
-
-          {/* المسار المختار */}
-          {route?.legs.map((leg, i) => {
-            const d = toPath(leg.stations.map((s) => POSITIONS[s]))
-            return (
-              <g key={i}>
-                <path
-                  d={d}
-                  fill="none"
-                  stroke="#fbf8f1"
-                  strokeWidth={r(20)}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d={d}
-                  fill="none"
-                  stroke={LINES[leg.line].color}
-                  strokeWidth={r(12)}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </g>
-            )
-          })}
-
-          {/* المشي في المسار المختار */}
-          {route &&
-            [...route.legs.map((l) => l.walkBefore), route.walkAfter]
-              .filter(Boolean)
-              .map((w, i) => (
-                <path
-                  key={'walk' + i}
-                  d={toPath([POSITIONS[w.from], POSITIONS[w.to]])}
-                  fill="none"
-                  stroke="#1d1b16"
-                  strokeWidth={r(5)}
-                  strokeDasharray={`${r(5)} ${r(4)}`}
-                  strokeLinecap="round"
-                />
-              ))}
-
-          {/* المحطات */}
-          {Object.values(STATIONS).map((st) => {
-            const [x, y] = POSITIONS[st.id]
-            const inter = isInterchange(st.id) || isLink(st.id)
-            const onRoute = routeStations.set.has(st.id)
-            const dim = hasRoute && !onRoute
-            const isFrom = st.id === from
-            const isTo = st.id === to
-            const radius = isFrom || isTo ? r(11) : inter ? r(9) : onRoute ? r(6.5) : r(5)
-            const lineColor =
-              LINES[route?.legs.find((l) => l.stations.includes(st.id))?.line ?? 1].color
-            return (
-              <g key={st.id} opacity={dim ? 0.35 : 1} style={{ cursor: 'pointer' }}>
-                <title>{`${st.ar} — ${st.en}`}</title>
-                <circle cx={x} cy={y} r={r(15)} fill="transparent" />
-                <circle
-                  cx={x}
-                  cy={y}
-                  r={radius}
-                  fill={isFrom ? '#1d1b16' : isTo ? '#f2b134' : '#fbf8f1'}
-                  stroke={
-                    isFrom
-                      ? '#f2b134'
-                      : isTo
-                        ? '#1d1b16'
-                        : inter
-                          ? '#1d1b16'
-                          : onRoute
-                            ? lineColor
-                            : '#5b564a'
-                  }
-                  strokeWidth={r(inter || isFrom || isTo ? 4 : 2.5)}
-                />
-                {showLabel(st.id) &&
-                  (() => {
-                    const [anchor, dx, dy] = labelPos(st.id, x)
-                    const strong =
-                      isFrom ||
-                      isTo ||
-                      inter ||
-                      TERMINALS.has(st.id) ||
-                      routeStations.transfers.has(st.id)
-                    return (
-                      <text
-                        x={x + (dx * unit) / Math.pow(k, 0.55)}
-                        y={y + (dy * unit) / Math.pow(k, 0.55)}
-                        textAnchor={anchor}
-                        fontSize={fs(strong ? 15 : 12.5)}
-                        fontWeight={strong ? 700 : 500}
-                        fill="#1d1b16"
-                        stroke="#fbf8f1"
-                        strokeWidth={fs(4)}
-                        paintOrder="stroke"
-                        strokeLinejoin="round"
-                        pointerEvents="none"
-                      >
-                        {/* RLI…PDI: النص عربي جوه SVG واخد direction: ltr — العزل بيظبط ترتيب الأسماء المختلطة زي «حي R2» */}
-                        {`\u2067${st.ar}\u2069`}
-                      </text>
-                    )
-                  })()}
-              </g>
-            )
-          })}
+          <MapLayers k={k} unit={unit} route={route} from={from} to={to} />
         </g>
       </svg>
 
@@ -538,3 +559,6 @@ export default function MetroMap({ route, from, to, onStationClick }) {
     </div>
   )
 }
+
+// memo: تغييرات App اللي مالهاش علاقة بالخريطة (نسخ الرابط، نوع التذكرة…) مابتعيدش رسمها
+export default memo(MetroMap)

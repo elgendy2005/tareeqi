@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { STATIONS, FARE_EFFECTIVE } from './data/metro.js'
 import { findRoute, routeFare } from './lib/router.js'
 import { routeSummary, tripLabel } from './lib/format.js'
@@ -68,19 +68,24 @@ export default function App() {
   useEffect(() => saveRecent(recent), [recent])
   const clearRecent = () => setRecent([])
 
-  // ضغطة على محطة في الخريطة: أول ضغطة = من، تاني ضغطة = إلى، وبعدها نبدأ من جديد
-  const onStationClick = (id) => {
-    // تاني ضغطة بتكمّل الرحلة → على الموبايل نطلع للنتيجة (هي فوق الخريطة)
-    if (from && !to && id !== from) scrollToResult.current = true
-    setPair((p) => {
-      if (!p.from || (p.from && p.to)) return { from: id, to: null }
-      if (id === p.from) return p
-      return { ...p, to: id }
-    })
-  }
-
   const resultRef = useRef(null)
   const scrollToResult = useRef(false)
+
+  // ضغطة على محطة في الخريطة: أول ضغطة = من، تاني ضغطة = إلى، وبعدها نبدأ من جديد
+  // useCallback: الخريطة متغلّفة بـ memo، فالدالة لازم تفضل ثابتة طول ما من/إلى ثابتين
+  const onStationClick = useCallback(
+    (id) => {
+      // تاني ضغطة بتكمّل الرحلة → على الموبايل نطلع للنتيجة (هي فوق الخريطة)
+      if (from && !to && id !== from) scrollToResult.current = true
+      setPair((p) => {
+        if (!p.from || (p.from && p.to)) return { from: id, to: null }
+        if (id === p.from) return p
+        return { ...p, to: id }
+      })
+    },
+    [from, to],
+  )
+
   useEffect(() => {
     if (!scrollToResult.current || !route) return
     scrollToResult.current = false
