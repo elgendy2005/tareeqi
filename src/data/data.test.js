@@ -1,15 +1,18 @@
 import { describe, it, expect } from 'vitest'
-import { STATIONS, SERVICES, LINES, L3_TRUNK, BRANCH_A, BRANCH_B } from './metro.js'
+import { STATIONS, SERVICES, LINES, L3_TRUNK, BRANCH_A, BRANCH_B, TRANSFER_LINKS, FARE_SYSTEMS } from './metro.js'
 import { isInterchange } from '../lib/router.js'
 import { COORDS } from './coords.js'
 import { haversineKm } from '../lib/geo.js'
 
 // الأعداد المتوقعة موثّقة في docs/DATA.md (ويكيبيديا العربية والإنجليزية، مراجعة 9 نوفمبر 2026).
 const svc = (id) => SERVICES.find((s) => s.id === id)
+const isMonorail = (id) => id.startsWith('m-')
 
 describe('سلامة بيانات المترو', () => {
-  it('عدد المحطات الفريدة = 84', () => {
-    expect(Object.keys(STATIONS)).toHaveLength(84)
+  it('عدد المحطات الفريدة: 84 مترو + 22 مونوريل', () => {
+    const ids = Object.keys(STATIONS)
+    expect(ids.filter((id) => !isMonorail(id))).toHaveLength(84)
+    expect(ids.filter(isMonorail)).toHaveLength(22)
   })
 
   it('مفيش تكرار في الـ id، وكل مفتاح بيطابق الـ id بتاعه', () => {
@@ -78,7 +81,8 @@ describe('الخط الثالث (الأخضر)', () => {
 
 describe('الإحداثيات الجغرافية (OpenStreetMap)', () => {
   // حدود تقريبية للقاهرة الكبرى (حلوان جنوبًا ← المرج شمالًا، الجيزة غربًا ← عدلي منصور شرقًا)
-  const BOUNDS = { minLat: 29.8, maxLat: 30.25, minLng: 31.1, maxLng: 31.5 }
+  // (المونوريل بيوصل للعاصمة الجديدة شرقًا ~31.77)
+  const BOUNDS = { minLat: 29.8, maxLat: 30.25, minLng: 31.1, maxLng: 31.8 }
 
   it('كل محطة ليها إحداثيات ورقم node من OSM، ومفيش إحداثيات لمحطة مش موجودة', () => {
     expect(Object.keys(COORDS).sort()).toEqual(Object.keys(STATIONS).sort())
@@ -94,13 +98,51 @@ describe('الإحداثيات الجغرافية (OpenStreetMap)', () => {
     }
   })
 
-  it('المسافة بين أي محطتين جنب بعض معقولة (0.3–3.5 كم) — بيكشف ترتيب غلط أو node غلط', () => {
-    for (const s of SERVICES)
+  it('المسافة بين أي محطتين جنب بعض معقولة — بيكشف ترتيب غلط أو node غلط', () => {
+    // مترو: 0.3–3.5 كم · مونوريل (محطات أبعد في العاصمة الجديدة): 0.5–4.5 كم
+    for (const s of SERVICES) {
+      const [min, max] = s.mode === 'monorail' ? [0.5, 4.5] : [0.3, 3.5]
       for (let i = 1; i < s.stations.length; i++) {
         const [a, b] = [s.stations[i - 1], s.stations[i]]
         const d = haversineKm(COORDS[a], COORDS[b])
-        expect(d, `${s.id}: ${a} → ${b}`).toBeGreaterThan(0.3)
-        expect(d, `${s.id}: ${a} → ${b}`).toBeLessThan(3.5)
+        expect(d, `${s.id}: ${a} → ${b}`).toBeGreaterThan(min)
+        expect(d, `${s.id}: ${a} → ${b}`).toBeLessThan(max)
       }
+    }
+  })
+
+  it('كل رابط مشي بين محطتين موجودتين وقريبين فعلًا (أقل من 500 متر)', () => {
+    for (const { a, b, walkMinutes } of TRANSFER_LINKS) {
+      expect(STATIONS[a], a).toBeDefined()
+      expect(STATIONS[b], b).toBeDefined()
+      expect(haversineKm(COORDS[a], COORDS[b]), `${a} ↔ ${b}`).toBeLessThan(0.5)
+      expect(walkMinutes).toBeGreaterThan(0)
+    }
   })
 })
+
+describe('مونوريل شرق النيل', () => {
+  it('22 محطة، من إستاد القاهرة لمدينة العدالة', () => {
+    const s = svc('ENM')
+    expect(s.mode).toBe('monorail')
+    expect(s.stations).toHaveLength(22)
+    expect(s.stations[0]).toBe('m-stadium')
+    expect(s.stations[6]).toBe('m-tantawi') // آخر محطات المرحلة التانية + أول المرحلة الأولى
+    expect(s.stations.at(-1)).toBe('m-justice-city')
+  })
+
+  it('«هشام بركات» في المونوريل محطة منفصلة عن «هشام بركات» في المترو (حوالي 9 كم)', () => {
+    expect(STATIONS['m-hesham-barakat']).toBeDefined()
+    expect(haversineKm(COORDS['m-hesham-barakat'], COORDS['hesham-barakat'])).toBeGreaterThan(5)
+  })
+
+  it('محطات المونوريل مش متشاركة مع أي خدمة مترو', () => {
+    const metro = new Set(SERVICES.filter((s) => s.mode !== 'monorail').flatMap((s) => s.stations))
+    for (const id of svc('ENM').stations) expect(metro.has(id), id).toBe(false)
+  })
+
+  it('آخر شريحة في كل نظام تسعير بتغطي أطول رحلة على نفس الوسيلة', () => {
+    expect(FARE_SYSTEMS.monorail.brackets.at(-1).maxStations).toBe(svc('ENM').stations.length)
+  })
+})
+

@@ -1,6 +1,6 @@
 // تخطيط تخطيطي (schematic) للخريطة — مش خريطة جغرافية دقيقة.
 // بنحدد "نقاط ارتكاز" لمحطات معينة، والباقي بيتوزع بالتساوي بينهم.
-import { SERVICES, L3_TRUNK, BRANCH_A, BRANCH_B } from './metro.js'
+import { SERVICES, L3_TRUNK, BRANCH_A, BRANCH_B, TRANSFER_LINKS } from './metro.js'
 
 export const VIEWBOX = { w: 1100, h: 940 }
 
@@ -23,6 +23,12 @@ const ANCHORS = {
   ],
   '3A': [['kit-kat', 380, 420], ['rod-el-farag-corridor', 160, 240]],
   '3B': [['kit-kat', 380, 420], ['cairo-university', 240, 520]],
+  // مونوريل شرق النيل: بيبدأ تحت «الإستاد» (مترو) بشوية — محطتين منفصلتين بينهم مشي —
+  // ونازل للركن اللي تحت على اليمين من غير مايقطع أي خط مترو.
+  ENM: [
+    ['m-stadium', 756, 452], ['m-jehan-sadat', 790, 590], ['m-tantawi', 815, 615],
+    ['m-justice-city', 1060, 890],
+  ],
 }
 
 function place(sequence, anchors) {
@@ -50,10 +56,12 @@ const posL2 = place(s2, ANCHORS[2])
 const posTrunk = place(L3_TRUNK, ANCHORS['3T'])
 const posA = place(['kit-kat', ...BRANCH_A], ANCHORS['3A'])
 const posB = place(['kit-kat', ...BRANCH_B], ANCHORS['3B'])
+const sENM = SERVICES.find((s) => s.id === 'ENM').stations
+const posENM = place(sENM, ANCHORS.ENM)
 
 // موضع كل محطة (التبادل بيتاخد من أول تعريف؛ الاختبار بيتأكد إنهم متطابقين)
-export const POSITIONS = { ...posL2, ...posL1, ...posTrunk, ...posA, ...posB }
-export const POSITIONS_BY_SOURCE = { posL1, posL2, posTrunk, posA, posB }
+export const POSITIONS = { ...posL2, ...posL1, ...posTrunk, ...posA, ...posB, ...posENM }
+export const POSITIONS_BY_SOURCE = { posL1, posL2, posTrunk, posA, posB, posENM }
 
 const pts = (seq, ...maps) =>
   seq.map((id) => {
@@ -67,6 +75,10 @@ export const LINE_PATHS = [
   { line: 2, points: pts(s2, posL2) },
   { line: 3, points: pts([...L3_TRUNK, ...BRANCH_A], posTrunk, posA) },
   { line: 3, points: pts(['kit-kat', ...BRANCH_B], posB) },
+  { line: 'ENM', points: pts(sENM, posENM) },
 ]
+
+// روابط المشي بين محطتين منفصلتين (بتترسم خط متقطع)
+export const WALK_PATHS = TRANSFER_LINKS.map(({ a, b }) => ({ a, b, points: [POSITIONS[a], POSITIONS[b]] }))
 
 export const toPath = (points) => points.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ')

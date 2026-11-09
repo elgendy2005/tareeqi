@@ -1,4 +1,4 @@
-import { SERVICES, STATIONS, FARE_BRACKETS } from '../data/metro.js'
+import { SERVICES, STATIONS, FARE_SYSTEMS, TRANSFER_LINKS } from '../data/metro.js'
 
 // ---- ثوابت التقدير ----
 export const TRANSFER_PENALTY = 6 // التحويل بيتحسب بـ 6 محطات عشان نفضّل مسار فيه تحويلات أقل
@@ -24,6 +24,19 @@ export const isInterchange = (stationId) => {
 export const linesAt = (stationId) => [
   ...new Set((servicesAt[stationId] || []).map((sid) => svcById[sid].line)),
 ]
+
+/** وسيلة النقل للخدمة: 'metro' (افتراضي) أو 'monorail'. */
+export const modeOf = (svc) => svc.mode ?? 'metro'
+
+// روابط المشي في الاتجاهين: stationId → [{ to, minutes }]
+const walksFrom = {}
+for (const { a, b, walkMinutes } of TRANSFER_LINKS) {
+  ;(walksFrom[a] ||= []).push({ to: b, minutes: walkMinutes })
+  ;(walksFrom[b] ||= []).push({ to: a, minutes: walkMinutes })
+}
+/** المحطات اللي ممكن تمشي لها من المحطة دي (محطات منفصلة، مش نفس المحطة). */
+export const walkLinksAt = (stationId) => walksFrom[stationId] || []
+const walkMinutes = (a, b) => walkLinksAt(a).find((w) => w.to === b)?.minutes
 
 // ---- طابور أولويات بسيط (min-heap) ----
 class MinHeap {
@@ -70,12 +83,12 @@ const key = (station, svc) => `${station}|${svc}`
 
 /**
  * السعر حسب عدد محطات التذكرة. العدد **شامل محطة الركوب ومحطة النزول**
- * (يعني عدد الخطوات + 1) — المصدر في docs/DATA.md.
+ * (يعني عدد الخطوات + 1) — المصدر في docs/DATA.md. كل وسيلة ليها شرايحها (`FARE_SYSTEMS`).
  */
-export function fareFor(stations) {
-  for (const b of FARE_BRACKETS)
-    if (stations <= b.maxStations) return { price: b.price, bracket: b }
-  const last = FARE_BRACKETS[FARE_BRACKETS.length - 1]
+export function fareFor(stations, mode = 'metro') {
+  const brackets = FARE_SYSTEMS[mode].brackets
+  for (const b of brackets) if (stations <= b.maxStations) return { price: b.price, bracket: b }
+  const last = brackets[brackets.length - 1]
   return { price: last.price, bracket: last, overMax: true }
 }
 
@@ -127,6 +140,9 @@ export function findRoute(fromId, toId) {
     if (i > 0) relax(svc.stations[i - 1], sid, 1)
     if (i < svc.stations.length - 1) relax(svc.stations[i + 1], sid, 1)
     for (const other of servicesAt[st]) if (other !== sid) relax(st, other, TRANSFER_PENALTY)
+    // مشي لمحطة منفصلة (مثلًا مترو الإستاد ↔ مونوريل إستاد القاهرة)
+    for (const w of walkLinksAt(st))
+      for (const other of servicesAt[w.to]) relax(w.to, other, TRANSFER_PENALTY)
   }
   if (!goal) return null
 
@@ -138,19 +154,29 @@ export function findRoute(fromId, toId) {
   }
   states.reverse()
 
-  // قسّم لرحلات (legs) — كل رحلة على خدمة واحدة
+  // قسّم لرحلات (legs) — كل رحلة على خدمة واحدة. المشي بين محطتين منفصلتين بيتسجّل
+  // كـ walkBefore على الرحلة اللي بعده، أو walkAfter لو الرحلة بتخلص بمشي.
   const legs = []
   let cur = null
+  let prevStation = null
   for (const { station, service } of states) {
     if (!cur || cur.service !== service) {
+      const walk =
+        prevStation && prevStation !== station
+          ? { from: prevStation, to: station, minutes: walkMinutes(prevStation, station) }
+          : null
+      // رحلة من محطة واحدة (بداية/تحويل من غير ركوب) مابتتعدش، بس المشي اللي قبلها بيتنقل
+      const carried = cur && cur.stations.length === 1 ? cur.walkBefore : null
       if (cur && cur.stations.length > 1) legs.push(cur)
-      // تحويل (نفس المحطة، خدمة جديدة): ابدأ رحلة جديدة من نفس المحطة
-      cur = { service, stations: [station] }
+      cur = { service, stations: [station], walkBefore: walk ?? carried }
     } else if (cur.stations[cur.stations.length - 1] !== station) {
       cur.stations.push(station)
     }
+    prevStation = station
   }
+  let walkAfter = null
   if (cur && cur.stations.length > 1) legs.push(cur)
+  else if (cur?.walkBefore) walkAfter = cur.walkBefore
 
   const detailed = legs.map((leg, idx) => {
     const svc = svcById[leg.service]
@@ -161,33 +187,63 @@ export function findRoute(fromId, toId) {
     return {
       service: leg.service,
       line: svc.line,
+      mode: modeOf(svc),
+      walkBefore: leg.walkBefore,
       stations: leg.stations,
       from: leg.stations[0],
       to: leg.stations[leg.stations.length - 1],
       stops: leg.stations.length - 1,
       direction: directionLabel(svc, iFrom, iTo),
-      // لو التحويل جوه الخط 3 (بين الفرعين) → "غيّر القطار" مش "غيّر الخط"
-      changeKind: prevSvc ? (prevSvc.line === svc.line ? 'train' : 'line') : null,
+      // مشي لمحطة تانية → 'walk' · جوه الخط 3 (بين الفرعين) → 'train' · غير كده → 'line'
+      changeKind: !prevSvc
+        ? null
+        : leg.walkBefore
+          ? 'walk'
+          : prevSvc.line === svc.line
+            ? 'train'
+            : 'line',
     }
   })
 
   const stops = detailed.reduce((n, l) => n + l.stops, 0)
   const rideMinutes = detailed.reduce((m, l) => m + l.stops * minutesPerStop(svcById[l.service]), 0)
-  const transfers = detailed.length - 1
-  // عدد محطات التذكرة = كل المحطات من الركوب للنزول شاملة الطرفين.
-  // محطة التحويل بتتحسب مرة واحدة، فالعدد = الخطوات + 1.
-  const fareStations = stops + 1
-  const fare = fareFor(fareStations)
+  const transfers = Math.max(0, detailed.length - 1)
+  // زمن التحويلات: مشي (تقدير لكل رابط) أو تحويل جوه نفس المحطة (MIN_PER_TRANSFER)
+  const changeMinutes = detailed.reduce(
+    (m, l, i) => m + (l.walkBefore ? l.walkBefore.minutes : i > 0 ? MIN_PER_TRANSFER : 0),
+    walkAfter ? walkAfter.minutes : 0,
+  )
+
+  // التذاكر: كل مجموعة رحلات متتالية على نفس الوسيلة = تذكرة واحدة.
+  // عدد محطات التذكرة = كل المحطات من الركوب للنزول شاملة الطرفين (محطة التحويل مرة واحدة)
+  // يعني خطوات المجموعة + 1. TODO(verify) تذاكر المترو والمونوريل منفصلة (docs/DATA.md).
+  const tickets = []
+  for (const l of detailed) {
+    const last = tickets[tickets.length - 1]
+    if (last && last.mode === l.mode && !l.walkBefore) last.steps += l.stops
+    else tickets.push({ mode: l.mode, steps: l.stops })
+  }
+  for (const tk of tickets) {
+    tk.stations = tk.steps + 1
+    const f = fareFor(tk.stations, tk.mode)
+    tk.price = f.price
+    tk.overMax = !!f.overMax
+    tk.effective = FARE_SYSTEMS[tk.mode].effective
+    delete tk.steps
+  }
 
   return {
     from: fromId,
     to: toId,
     legs: detailed,
+    walkAfter,
     stops,
-    fareStations,
+    tickets,
+    // للرحلات بتذكرة واحدة (الأغلب): عدد محطات التذكرة
+    fareStations: tickets.length === 1 ? tickets[0].stations : null,
     transfers,
-    fare: fare.price,
-    fareOverMax: !!fare.overMax,
-    minutes: Math.round(rideMinutes + transfers * MIN_PER_TRANSFER),
+    fare: tickets.reduce((s, tk) => s + tk.price, 0),
+    fareOverMax: tickets.some((tk) => tk.overMax),
+    minutes: Math.round(rideMinutes + changeMinutes),
   }
 }

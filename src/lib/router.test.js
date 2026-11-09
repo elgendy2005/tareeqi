@@ -153,7 +153,8 @@ describe('المسارات', () => {
         const r = findRoute(a, b)
         expect(r, `${a}->${b}`).not.toBeNull()
         max = Math.max(max, r.transfers)
-        expect(r.stops).toBeGreaterThan(0)
+        // يا إما فيه ركوب، يا إما الرحلة مشي بس بين محطتين جنب بعض (الإستاد ↔ إستاد القاهرة)
+        expect(r.stops > 0 || r.walkAfter !== null, `${a}->${b}`).toBe(true)
       }
     expect(max).toBeLessThanOrEqual(3)
   })
@@ -191,5 +192,77 @@ describe('تخطيط الخريطة', () => {
     expect(same(P.posL1.nasser, P.posTrunk.nasser)).toBe(true)
     expect(same(P.posL2.attaba, P.posTrunk.attaba)).toBe(true)
     expect(same(P.posL2['cairo-university'], P.posB['cairo-university'])).toBe(true)
+  })
+})
+
+describe('المونوريل والمشي والتذاكر المنفصلة', () => {
+  it('مترو → مونوريل: مشي في الإستاد وتذكرتين', () => {
+    const r = findRoute('attaba', 'm-justice-city')
+    expect(r.legs.map((l) => l.line)).toEqual([3, 'ENM'])
+    expect(r.legs[0].to).toBe('stadium')
+    expect(r.legs[1].changeKind).toBe('walk')
+    expect(r.legs[1].walkBefore).toEqual({ from: 'stadium', to: 'm-stadium', minutes: 5 })
+    expect(r.tickets.map((t) => [t.mode, t.stations, t.price])).toEqual([
+      ['metro', 7, 10],
+      ['monorail', 22, 80],
+    ])
+    expect(r.fare).toBe(90)
+    expect(r.fareStations).toBeNull() // أكتر من تذكرة
+  })
+
+  it('الخط كله على المونوريل = 22 محطة = 80 جنيه = 60 دقيقة', () => {
+    const r = findRoute('m-stadium', 'm-justice-city')
+    expect(r.fareStations).toBe(22)
+    expect(r.fare).toBe(80)
+    expect(r.minutes).toBe(60)
+  })
+
+  it.each([
+    [2, 20],
+    [5, 20],
+    [6, 40],
+    [10, 40],
+    [11, 55],
+    [15, 55],
+    [16, 80],
+    [22, 80],
+  ])('مونوريل: %i محطة = %i جنيه', (stations, price) =>
+    expect(fareFor(stations, 'monorail').price).toBe(price),
+  )
+
+  it('الرحلة بتبدأ بمشي: من مترو الإستاد لمونوريل المشير طنطاوي', () => {
+    const r = findRoute('stadium', 'm-tantawi')
+    expect(r.legs).toHaveLength(1)
+    expect(r.legs[0].walkBefore?.from).toBe('stadium')
+    expect(r.transfers).toBe(0)
+    expect(r.minutes).toBe(Math.round(6 * (60 / 21) + 5))
+  })
+
+  it('الرحلة بتخلص بمشي: من المونوريل لمحطة مترو الإستاد', () => {
+    const r = findRoute('m-cbd', 'stadium')
+    expect(r.legs.map((l) => l.line)).toEqual(['ENM'])
+    expect(r.walkAfter).toEqual({ from: 'm-stadium', to: 'stadium', minutes: 5 })
+  })
+
+  it('المحطتين جنب بعض: مشي بس، من غير تذكرة', () => {
+    const r = findRoute('stadium', 'm-stadium')
+    expect(r.legs).toEqual([])
+    expect(r.walkAfter?.minutes).toBe(5)
+    expect(r.fare).toBe(0)
+  })
+
+  it('«هشام بركات» مونوريل → «هشام بركات» مترو: مش نفس المحطة، الرحلة بتعدّي على الإستاد', () => {
+    const r = findRoute('m-hesham-barakat', 'hesham-barakat')
+    expect(r.legs.map((l) => l.line)).toEqual(['ENM', 3])
+    expect(r.tickets).toHaveLength(2)
+  })
+
+  it('رحلات المترو لوحدها ماتأثرتش', () => {
+    const r = findRoute('maadi', 'opera')
+    expect(r.tickets).toEqual([
+      { mode: 'metro', stations: 10, price: 12, overMax: false, effective: '27 مارس 2026' },
+    ])
+    expect(r.walkAfter).toBeNull()
+    expect(r.legs.every((l) => !l.walkBefore)).toBe(true)
   })
 })

@@ -1,7 +1,7 @@
 // إحداثيات جغرافية حقيقية لكل محطة (WGS84).
 // المصدر: OpenStreetMap — © OpenStreetMap contributors، مرخّصة بـ ODbL 1.0
 // (https://www.openstreetmap.org/copyright). `osm` = رقم الـ node عشان أي حد يراجع المصدر.
-// اتسحبت من Overpass API — لقطة البيانات: 2026-11-09T00:26:05Z. طريقة السحب والمطابقة في docs/DATA.md.
+// اتسحبت من Overpass API — لقطة بيانات المترو: 2026-11-09T00:26:05Z. طريقة السحب والمطابقة في docs/DATA.md.
 
 export const COORDS_SOURCE = { name: 'OpenStreetMap', license: 'ODbL 1.0', snapshot: '2026-11-09T00:26:05Z' }
 
@@ -91,4 +91,27 @@ export const COORDS = {
   'wadi-el-nile': { lat: 30.05846, lng: 31.20102, osm: 11923457960 },
   'gamat-el-dowal': { lat: 30.05095, lng: 31.19969, osm: 11923472283 },
   'boulak-el-dakrour': { lat: 30.03754, lng: 31.19550, osm: 11923472313 },
+  // مونوريل شرق النيل — nodes من نوع stop_position (لقطة 2026-11-09T00:47:36Z)
+  'm-stadium': { lat: 30.07158, lng: 31.31764, osm: 8153781067 },
+  'm-hesham-barakat': { lat: 30.06350, lng: 31.32187, osm: 13691445046 },
+  'm-al-azhar-university': { lat: 30.05378, lng: 31.32472, osm: 12206848818 },
+  'm-seventh-district': { lat: 30.04377, lng: 31.33091, osm: 12206826987 },
+  'm-ahmed-ismail': { lat: 30.04545, lng: 31.34639, osm: 12206833925 },
+  'm-jehan-sadat': { lat: 30.03924, lng: 31.35548, osm: 12206732996 },
+  'm-tantawi': { lat: 30.01916, lng: 31.38331, osm: 12206762833 },
+  'm-one-ninety': { lat: 30.01628, lng: 31.40897, osm: 12206733004 },
+  'm-air-force-hospital': { lat: 30.01632, lng: 31.43389, osm: 12206697336 },
+  'm-el-narges': { lat: 30.02553, lng: 31.45992, osm: 12206666397 },
+  'm-investors': { lat: 30.02540, lng: 31.49066, osm: 12206658462 },
+  'm-lotus': { lat: 30.01329, lng: 31.51959, osm: 12204816177 },
+  'm-golden-square': { lat: 30.02704, lng: 31.53304, osm: 12204802780 },
+  'm-beit-el-watan': { lat: 30.02684, lng: 31.56059, osm: 12204780997 },
+  'm-fattah-aleem': { lat: 30.02477, lng: 31.59878, osm: 12204760499 },
+  'm-r1': { lat: 30.01699, lng: 31.63101, osm: 12204707792 },
+  'm-r2': { lat: 30.01832, lng: 31.66336, osm: 12204707225 },
+  'm-cbd': { lat: 30.01725, lng: 31.68915, osm: 12204710521 },
+  'm-arts-culture': { lat: 30.00811, lng: 31.72558, osm: 12204679331 },
+  'm-government-district': { lat: 30.00802, lng: 31.74482, osm: 12204679423 },
+  'm-misr-mosque': { lat: 29.99528, lng: 31.75006, osm: 12204326294 },
+  'm-justice-city': { lat: 30.00594, lng: 31.77011, osm: 9887149546 },
 }

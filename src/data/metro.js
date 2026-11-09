@@ -101,6 +101,33 @@ export const STATIONS = Object.fromEntries(
     s('wadi-el-nile', 'وادي النيل', 'Wadi El Nile'),
     s('gamat-el-dowal', 'جامعة الدول العربية', 'Gamat El Dowal'),
     s('boulak-el-dakrour', 'بولاق الدكرور', 'Boulak El Dakrour'),
+
+    // ---------- مونوريل شرق النيل: إستاد القاهرة ↔ مدينة العدالة ----------
+    // الـ id بيبدأ بـ m- عشان مايتلخبطش مع محطات المترو اللي ليها نفس الاسم
+    // (مثلًا «هشام بركات» في المونوريل مكان تاني خالص غير «هشام بركات» في المترو).
+    // المصدر والترتيب: docs/DATA.md § المونوريل
+    s('m-stadium', 'إستاد القاهرة', 'Cairo Stadium', ['الاستاد']),
+    s('m-hesham-barakat', 'هشام بركات', 'Hesham Barakat'),
+    s('m-al-azhar-university', 'جامعة الأزهر', 'Al Azhar University'),
+    s('m-seventh-district', 'الحي السابع', '7th District'),
+    s('m-ahmed-ismail', 'المشير أحمد إسماعيل', 'Marshal Ahmed Ismail'),
+    s('m-jehan-sadat', 'جيهان السادات', 'Jehan Sadat'),
+    s('m-tantawi', 'المشير طنطاوي', 'Marshal Tantawi'),
+    s('m-one-ninety', 'وان ناينتي', 'One Ninety'),
+    s('m-air-force-hospital', 'المستشفى الجوي', 'Air Force Hospital'),
+    s('m-el-narges', 'النرجس', 'El Narges', ['El Nargus']),
+    s('m-investors', 'المستثمرين', 'Investors'),
+    s('m-lotus', 'اللوتس', 'Al Lotus'),
+    s('m-golden-square', 'جولدن سكوير', 'Golden Square'),
+    s('m-beit-el-watan', 'بيت الوطن', 'Beit El Watan'),
+    s('m-fattah-aleem', 'مسجد الفتاح العليم', 'Al-Fattah Al-Aleem Mosque'),
+    s('m-r1', 'حي R1', 'R1 District'),
+    s('m-r2', 'حي R2', 'R2 District'),
+    s('m-cbd', 'حي المال والأعمال', 'Central Business District', ['CBD']),
+    s('m-arts-culture', 'مدينة الفنون والثقافة', 'Arts & Culture City'),
+    s('m-government-district', 'الحي الحكومي', 'Government District'),
+    s('m-misr-mosque', 'مسجد مصر', 'Misr Mosque'),
+    s('m-justice-city', 'مدينة العدالة', 'Justice City'),
   ].map((st) => [st.id, st]),
 )
 
@@ -108,6 +135,7 @@ export const LINES = {
   1: { id: 1, ar: 'الخط الأول', color: '#1d5fc9', terminals: ['حلوان', 'المرج الجديدة'] },
   2: { id: 2, ar: 'الخط الثاني', color: '#d8322c', terminals: ['المنيب', 'شبرا الخيمة'] },
   3: { id: 3, ar: 'الخط الثالث', color: '#12904f', terminals: ['عدلي منصور', 'روض الفرج / جامعة القاهرة'] },
+  ENM: { id: 'ENM', ar: 'مونوريل شرق النيل', color: '#189ca6', mode: 'monorail', terminals: ['إستاد القاهرة', 'مدينة العدالة'] },
 }
 
 const L1 = [
@@ -135,6 +163,13 @@ export const L3_TRUNK = [
 const L3_BRANCH_A = ['sudan', 'imbaba', 'el-bohy', 'el-qawmia', 'ring-road', 'rod-el-farag-corridor']
 const L3_BRANCH_B = ['tawfikia', 'wadi-el-nile', 'gamat-el-dowal', 'boulak-el-dakrour', 'cairo-university']
 
+const MONORAIL_EAST_NILE = [
+  'm-stadium', 'm-hesham-barakat', 'm-al-azhar-university', 'm-seventh-district', 'm-ahmed-ismail',
+  'm-jehan-sadat', 'm-tantawi', 'm-one-ninety', 'm-air-force-hospital', 'm-el-narges', 'm-investors',
+  'm-lotus', 'm-golden-square', 'm-beit-el-watan', 'm-fattah-aleem', 'm-r1', 'm-r2', 'm-cbd',
+  'm-arts-culture', 'm-government-district', 'm-misr-mosque', 'm-justice-city',
+]
+
 /**
  * "الخدمة" (service) = مسار قطار حقيقي من طرف لطرف.
  * `line` = رقم الخط للعرض واللون. الخط 3 ليه خدمتين (3A و3B).
@@ -155,7 +190,18 @@ export const SERVICES = [
     endpoints: ['عدلي منصور', 'جامعة القاهرة'], trunkEnd: L3_TRUNK.length - 1,
     minutesEndToEnd: 58,
   },
+  {
+    // TODO(verify) زمن الرحلة الكاملة: المصادر بتقول 60–70 دقيقة، واخترنا أقل رقم (docs/DATA.md)
+    id: 'ENM', line: 'ENM', mode: 'monorail', stations: MONORAIL_EAST_NILE,
+    endpoints: ['إستاد القاهرة', 'مدينة العدالة'], minutesEndToEnd: 60,
+  },
 ]
+
+/**
+ * روابط مشي بين محطتين مختلفتين (مش نفس المحطة).
+ * TODO(verify) مدة المشي تقدير: المسافة حوالي 154 متر خط مستقيم حسب OSM، والتقدير المتفق عليه 5 دقايق.
+ */
+export const TRANSFER_LINKS = [{ a: 'stadium', b: 'm-stadium', walkMinutes: 5 }]
 
 export const BRANCH_A = L3_BRANCH_A
 export const BRANCH_B = L3_BRANCH_B
@@ -168,3 +214,20 @@ export const FARE_BRACKETS = [
   { maxStations: 23, price: 15 },
   { maxStations: 39, price: 20 },
 ]
+
+// ---- أنظمة التسعير: كل وسيلة ليها تذكرة وشرايح لوحدها ----
+// TODO(verify) مفيش مصدر بيذكر تذكرة موحدة مترو + مونوريل، فبنفترض تذكرتين منفصلتين.
+// TODO(verify) عد محطات المونوريل: بنفترض إنه شامل الطرفين زي المترو («حتى 22 محطة» = الخط كله).
+export const FARE_SYSTEMS = {
+  metro: { ar: 'مترو', effective: FARE_EFFECTIVE, brackets: FARE_BRACKETS },
+  monorail: {
+    ar: 'مونوريل',
+    effective: '6 مايو 2026',
+    brackets: [
+      { maxStations: 5, price: 20 },
+      { maxStations: 10, price: 40 },
+      { maxStations: 15, price: 55 },
+      { maxStations: 22, price: 80 },
+    ],
+  },
+}
