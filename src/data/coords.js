@@ -114,4 +114,17 @@ export const COORDS = {
   'm-government-district': { lat: 30.00802, lng: 31.74482, osm: 12204679423 },
   'm-misr-mosque': { lat: 29.99528, lng: 31.75006, osm: 12204326294 },
   'm-justice-city': { lat: 30.00594, lng: 31.77011, osm: 9887149546 },
+  // LRT — nodes من نوع railway=station (لقطة 2026-11-09T01:10:53Z)
+  'l-adly-mansour': { lat: 30.14640, lng: 31.42127, osm: 9885252635 },
+  'l-obour': { lat: 30.16293, lng: 31.48161, osm: 9885252630 },
+  'l-future': { lat: 30.17312, lng: 31.55410, osm: 9885252628 },
+  'l-shorouk': { lat: 30.17963, lng: 31.60580, osm: 9885252631 },
+  'l-new-heliopolis': { lat: 30.18373, lng: 31.65267, osm: 9885252634 },
+  'l-badr': { lat: 30.17519, lng: 31.71602, osm: 9885252627 },
+  'l-industrial-park': { lat: 30.20396, lng: 31.71560, osm: 9885252617 },
+  'l-knowledge-city': { lat: 30.23072, lng: 31.69161, osm: 9885252618 },
+  'l-robaiky': { lat: 30.16653, lng: 31.75245, osm: 9885200016 },
+  'l-hadayek-al-assema': { lat: 30.13668, lng: 31.80678, osm: 9885199998 },
+  'l-capital-airport': { lat: 30.07589, lng: 31.78248, osm: 9885200014 },
+  'l-arts-culture': { lat: 30.01365, lng: 31.72505, osm: 9885200015 },
 }

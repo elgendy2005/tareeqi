@@ -55,7 +55,8 @@ function Walk({ walk, nextMode }) {
 export default function RouteResult({ route }) {
   const { legs, tickets, fareStations, transfers, fare, minutes, fareOverMax, walkAfter } = route
   const multi = tickets.length > 1
-  const usesMonorail = tickets.some((t) => t.mode === 'monorail') || modeAt(route.to) === 'monorail'
+  // الوسائل غير المترو اللي في الرحلة (عشان نوضّح الافتراضات بتاعتها)
+  const modes = new Set([...tickets.map((t) => t.mode), modeAt(route.from), modeAt(route.to)])
 
   return (
     <section aria-live="polite" className="space-y-4">
@@ -118,8 +119,7 @@ export default function RouteResult({ route }) {
                   <Change>
                     {leg.changeKind === 'train' ? (
                       <>
-                        غيّر القطار في <b>{name(leg.from)}</b> واركب قطار{' '}
-                        {leg.direction === 'جامعة القاهرة' ? 'جامعة القاهرة' : 'محور روض الفرج'}
+                        غيّر القطار في <b>{name(leg.from)}</b> واركب قطار اتجاه {leg.direction}
                       </>
                     ) : (
                       <>
@@ -176,13 +176,21 @@ export default function RouteResult({ route }) {
         سعر المترو حسب شرائح عدد المحطات المعلنة من وزارة النقل (سارية من{' '}
         {FARE_SYSTEMS.metro.effective}). عدد المحطات بيتحسب من محطة الركوب لحد محطة النزول، والاتنين
         محسوبين. الوقت تقريبي، والجدول الفعلي بيتغير حسب الزحمة والتشغيل.
-        {usesMonorail && (
+        {modes.has('monorail') && (
           <>
             {' '}
             المونوريل ليه تذكرة لوحده بشرائحه (سارية من {FARE_SYSTEMS.monorail.effective}). ده
-            افتراض لأن مفيش تذكرة موحدة معلنة. وزمن المونوريل ومدة المشي في الإستاد تقديريين.
+            افتراض لأن مفيش تذكرة موحدة معلنة، وزمن المونوريل تقديري.
           </>
         )}
+        {modes.has('lrt') && (
+          <>
+            {' '}
+            الـ LRT ليه تذكرة لوحده بشرائحه (حتى 3 محطات / حتى 7 / أكتر)، وزمنه تقديري. وفرع العاشر
+            (مدينة المعرفة) قطار مكوكي من بدر.
+          </>
+        )}
+        {(modes.has('monorail') || modes.has('lrt')) && ' مدة المشي بين المحطات المنفصلة تقديرية.'}
       </p>
     </section>
   )

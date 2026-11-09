@@ -266,3 +266,51 @@ describe('المونوريل والمشي والتذاكر المنفصلة', ()
     expect(r.legs.every((l) => !l.walkBefore)).toBe(true)
   })
 })
+
+describe('القطار الكهربائي الخفيف LRT', () => {
+  it('مترو → LRT: مشي في عدلي منصور وتذكرتين', () => {
+    const r = findRoute('attaba', 'l-capital-airport')
+    expect(r.legs.map((l) => l.line)).toEqual([3, 'LRT'])
+    expect(r.legs[1].walkBefore).toEqual({ from: 'adly-mansour', to: 'l-adly-mansour', minutes: 5 })
+    expect(r.tickets.map((t) => [t.mode, t.stations, t.price])).toEqual([
+      ['metro', 19, 15],
+      ['lrt', 9, 20],
+    ])
+  })
+
+  it('فرع العاشر مكوكي: من عدلي منصور لمدينة المعرفة = تغيير قطار في بدر، تذكرة LRT واحدة', () => {
+    const r = findRoute('l-adly-mansour', 'l-knowledge-city')
+    expect(r.legs.map((l) => l.service)).toEqual(['LRT', 'LRT-R'])
+    expect(r.legs[1].from).toBe('l-badr')
+    expect(r.legs[1].changeKind).toBe('train')
+    expect(r.legs[1].direction).toBe('مدينة المعرفة')
+    expect(r.tickets).toHaveLength(1)
+    expect(r.tickets[0]).toMatchObject({ mode: 'lrt', stations: 8, price: 20 })
+  })
+
+  it.each([
+    [2, 10],
+    [3, 10],
+    [4, 15],
+    [7, 15],
+    [8, 20],
+    [10, 20],
+  ])('LRT: %i محطة = %i جنيه', (stations, price) =>
+    expect(fareFor(stations, 'lrt').price).toBe(price),
+  )
+
+  it('LRT ↔ مونوريل في مدينة الفنون والثقافة: مشي 10 دقايق (تقدير)', () => {
+    const r = findRoute('l-capital-airport', 'm-misr-mosque')
+    expect(r.legs.map((l) => l.line)).toEqual(['LRT', 'ENM'])
+    expect(r.legs[1].walkBefore).toEqual({
+      from: 'l-arts-culture',
+      to: 'm-arts-culture',
+      minutes: 10,
+    })
+    expect(r.tickets.map((t) => t.mode)).toEqual(['lrt', 'monorail'])
+  })
+
+  it('الزمن: 4.8 دقيقة لكل محطة على LRT (عدلي منصور ← بدر = 24 دقيقة منشورة)', () => {
+    expect(findRoute('l-adly-mansour', 'l-badr').minutes).toBe(24)
+  })
+})

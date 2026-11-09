@@ -94,12 +94,12 @@ export default function App() {
           <div>
             <h1 className="text-3xl font-bold leading-none">طريقي</h1>
             <p className="mt-1 text-sm text-ink-soft">
-              مخطط مترو القاهرة والمونوريل · أقصر مسار وسعر التذكرة
+              مترو القاهرة والمونوريل والقطار الخفيف · أقصر مسار وسعر التذكرة
             </p>
           </div>
         </div>
         <span className="hidden rounded-full border-2 border-ink px-3 py-1 text-xs font-medium sm:inline">
-          الخطوط ١ و٢ و٣ + المونوريل
+          الخطوط ١ و٢ و٣ + المونوريل و LRT
         </span>
       </header>
 

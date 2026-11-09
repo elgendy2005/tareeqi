@@ -17,6 +17,9 @@ const TERMINALS = new Set([
   'rod-el-farag-corridor',
   'm-stadium',
   'm-justice-city',
+  'l-arts-culture',
+  'l-knowledge-city',
+  'l-badr',
 ])
 
 // محطة ليها رابط مشي لمحطة تانية (زي الإستاد ↔ إستاد القاهرة) — بتتعامل كمحطة تبادل في العرض
@@ -33,6 +36,8 @@ const LABEL_POS = {
   'adly-mansour': ['end', -12, -10],
   stadium: ['end', -12, -8],
   'm-stadium': ['start', 12, 10],
+  'l-badr': ['end', -12, 20],
+  'l-adly-mansour': ['end', -12, 18],
 }
 
 function labelPos(id, x) {
@@ -245,6 +250,17 @@ export default function MetroMap({ route, from, to, onStationClick }) {
                   strokeLinejoin="round"
                 />
               )}
+              {/* LRT: شكل سكة حديد (نص متقطع فاتح) */}
+              {LINES[p.line].mode === 'lrt' && (
+                <path
+                  d={toPath(p.points)}
+                  fill="none"
+                  stroke="#fbf8f1"
+                  strokeWidth={r(3)}
+                  strokeDasharray={`${r(7)} ${r(7)}`}
+                  strokeLinejoin="round"
+                />
+              )}
             </g>
           ))}
 
@@ -406,6 +422,13 @@ export default function MetroMap({ route, from, to, onStationClick }) {
               className="inline-block h-2.5 w-5 rounded-full"
               style={{
                 background: l.color,
+                backgroundImage:
+                  l.mode === 'lrt'
+                    ? 'repeating-linear-gradient(90deg, transparent 0 3px, #fbf8f1 3px 6px)'
+                    : undefined,
+                backgroundSize: l.mode === 'lrt' ? '100% 2px' : undefined,
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
                 boxShadow:
                   l.mode === 'monorail'
                     ? 'inset 0 0 0 3px ' + l.color + ', inset 0 0 0 5px #fbf8f1'

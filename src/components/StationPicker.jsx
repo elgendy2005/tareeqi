@@ -137,9 +137,9 @@ export default function StationPicker({ label, value, onChange, placeholder, mar
                 <span dir="ltr" className="ms-2 text-sm text-ink-soft">
                   {st.en}
                 </span>
-                {modeAt(st.id) === 'monorail' && (
+                {modeAt(st.id) !== 'metro' && (
                   <span className="ms-2 rounded-full border border-ink/30 px-1.5 text-[11px] font-medium text-ink-soft">
-                    مونوريل
+                    {modeAt(st.id) === 'monorail' ? 'مونوريل' : 'LRT'}
                   </span>
                 )}
               </span>

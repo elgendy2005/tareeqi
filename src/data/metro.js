@@ -128,6 +128,21 @@ export const STATIONS = Object.fromEntries(
     s('m-government-district', 'الحي الحكومي', 'Government District'),
     s('m-misr-mosque', 'مسجد مصر', 'Misr Mosque'),
     s('m-justice-city', 'مدينة العدالة', 'Justice City'),
+
+    // ---------- القطار الكهربائي الخفيف LRT (قطار العاصمة) ----------
+    // الـ id بيبدأ بـ l- · المحطات الـ 12 الشغالة بس (docs/DATA.md § LRT)
+    s('l-adly-mansour', 'عدلي منصور', 'Adly Mansour'),
+    s('l-obour', 'العبور', 'El Obour'),
+    s('l-future', 'المستقبل', 'Future'),
+    s('l-shorouk', 'الشروق', 'El Shorouk'),
+    s('l-new-heliopolis', 'هليوبوليس الجديدة', 'New Heliopolis'),
+    s('l-badr', 'بدر', 'Badr'),
+    s('l-industrial-park', 'المنطقة الصناعية', 'Industrial Park'),
+    s('l-knowledge-city', 'مدينة المعرفة', 'Knowledge City', ['مدينة المعارف', 'العبور الجديدة']),
+    s('l-robaiky', 'الروبيكي', 'El Robaiky'),
+    s('l-hadayek-al-assema', 'حدائق العاصمة', 'Hadayek Al Assema'),
+    s('l-capital-airport', 'مطار العاصمة', 'Capital Airport'),
+    s('l-arts-culture', 'مدينة الفنون والثقافة', 'Arts and Culture City'),
   ].map((st) => [st.id, st]),
 )
 
@@ -135,6 +150,7 @@ export const LINES = {
   1: { id: 1, ar: 'الخط الأول', color: '#1d5fc9', terminals: ['حلوان', 'المرج الجديدة'] },
   2: { id: 2, ar: 'الخط الثاني', color: '#d8322c', terminals: ['المنيب', 'شبرا الخيمة'] },
   3: { id: 3, ar: 'الخط الثالث', color: '#12904f', terminals: ['عدلي منصور', 'روض الفرج / جامعة القاهرة'] },
+  LRT: { id: 'LRT', ar: 'القطار الكهربائي الخفيف', legend: 'LRT', color: '#7a3e9d', mode: 'lrt', terminals: ['عدلي منصور', 'مدينة الفنون والثقافة / مدينة المعرفة'] },
   ENM: { id: 'ENM', ar: 'مونوريل شرق النيل', legend: 'المونوريل', color: '#189ca6', mode: 'monorail', terminals: ['إستاد القاهرة', 'مدينة العدالة'] },
 }
 
@@ -162,6 +178,14 @@ export const L3_TRUNK = [
 ]
 const L3_BRANCH_A = ['sudan', 'imbaba', 'el-bohy', 'el-qawmia', 'ring-road', 'rod-el-farag-corridor']
 const L3_BRANCH_B = ['tawfikia', 'wadi-el-nile', 'gamat-el-dowal', 'boulak-el-dakrour', 'cairo-university']
+
+// LRT: الخدمة الأساسية عدلي منصور ↔ مدينة الفنون والثقافة، وفرع العاشر مكوكي بدر ↔ مدينة المعرفة
+// (جدول تشغيل نوفمبر 2026 — docs/DATA.md). يعني التحويل بين الاتجاهين = تغيير قطار في بدر.
+const LRT_MAIN = [
+  'l-adly-mansour', 'l-obour', 'l-future', 'l-shorouk', 'l-new-heliopolis', 'l-badr',
+  'l-robaiky', 'l-hadayek-al-assema', 'l-capital-airport', 'l-arts-culture',
+]
+const LRT_RAMADAN_SHUTTLE = ['l-badr', 'l-industrial-park', 'l-knowledge-city']
 
 const MONORAIL_EAST_NILE = [
   'm-stadium', 'm-hesham-barakat', 'm-al-azhar-university', 'm-seventh-district', 'm-ahmed-ismail',
@@ -195,13 +219,27 @@ export const SERVICES = [
     id: 'ENM', line: 'ENM', mode: 'monorail', stations: MONORAIL_EAST_NILE,
     endpoints: ['إستاد القاهرة', 'مدينة العدالة'], minutesEndToEnd: 60,
   },
+  // TODO(verify) زمن LRT: المنشور بس عدلي منصور ← بدر = 24 دقيقة لـ 5 خطوات (المشغّل، 2023)،
+  // فبنستخدم 4.8 د/محطة كتقدير للخط كله.
+  {
+    id: 'LRT', line: 'LRT', mode: 'lrt', stations: LRT_MAIN,
+    endpoints: ['عدلي منصور', 'مدينة الفنون والثقافة'], minutesPerStop: 4.8,
+  },
+  {
+    id: 'LRT-R', line: 'LRT', mode: 'lrt', stations: LRT_RAMADAN_SHUTTLE,
+    endpoints: ['بدر', 'مدينة المعرفة'], minutesPerStop: 4.8,
+  },
 ]
 
 /**
  * روابط مشي بين محطتين مختلفتين (مش نفس المحطة).
  * TODO(verify) مدة المشي تقدير: المسافة حوالي 154 متر خط مستقيم حسب OSM، والتقدير المتفق عليه 5 دقايق.
  */
-export const TRANSFER_LINKS = [{ a: 'stadium', b: 'm-stadium', walkMinutes: 5 }]
+export const TRANSFER_LINKS = [
+  { a: 'stadium', b: 'm-stadium', walkMinutes: 5 }, // ~154 م
+  { a: 'adly-mansour', b: 'l-adly-mansour', walkMinutes: 5 }, // ~74 م (مجمّع عدلي منصور)
+  { a: 'm-arts-culture', b: 'l-arts-culture', walkMinutes: 10 }, // ~616 م — TODO(verify)
+]
 
 export const BRANCH_A = L3_BRANCH_A
 export const BRANCH_B = L3_BRANCH_B
@@ -220,6 +258,16 @@ export const FARE_BRACKETS = [
 // TODO(verify) عد محطات المونوريل: بنفترض إنه شامل الطرفين زي المترو («حتى 22 محطة» = الخط كله).
 export const FARE_SYSTEMS = {
   metro: { ar: 'مترو', effective: FARE_EFFECTIVE, brackets: FARE_BRACKETS },
+  // TODO(verify) عد محطات LRT شامل الطرفين (افتراض زي المترو). «أكثر من 7» = مفتوح.
+  lrt: {
+    ar: 'LRT',
+    effective: '30 سبتمبر 2026 (آخر تأكيد منشور)',
+    brackets: [
+      { maxStations: 3, price: 10 },
+      { maxStations: 7, price: 15 },
+      { maxStations: Infinity, price: 20 },
+    ],
+  },
   monorail: {
     ar: 'مونوريل',
     effective: '6 مايو 2026',

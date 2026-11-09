@@ -7,7 +7,8 @@ export const MIN_PER_TRANSFER = 4 // مشي + انتظار عند التحويل
 
 /** دقايق لكل خطوة على الخدمة دي، محسوبة من زمن الرحلة الكامل المنشور. */
 export const minutesPerStop = (svc) =>
-  svc.minutesEndToEnd ? svc.minutesEndToEnd / (svc.stations.length - 1) : MIN_PER_STOP_FALLBACK
+  svc.minutesPerStop ??
+  (svc.minutesEndToEnd ? svc.minutesEndToEnd / (svc.stations.length - 1) : MIN_PER_STOP_FALLBACK)
 
 const svcById = Object.fromEntries(SERVICES.map((s) => [s.id, s]))
 const indexOf = Object.fromEntries(

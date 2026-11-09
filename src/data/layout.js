@@ -29,6 +29,13 @@ const ANCHORS = {
     ['m-stadium', 756, 452], ['m-jehan-sadat', 790, 590], ['m-tantawi', 815, 615],
     ['m-justice-city', 1060, 890],
   ],
+  // LRT: بيبدأ جنب «عدلي منصور» (مترو) ونازل على الحافة اليمين لحد «الفنون والثقافة»
+  // جنب محطة المونوريل اللي بنفس الاسم. فرع العاشر (مكوكي من بدر) طالع شمال جوه الخريطة.
+  LRT: [
+    ['l-adly-mansour', 1072, 262], ['l-badr', 1072, 520], ['l-capital-airport', 1072, 730],
+    ['l-arts-culture', 1042, 800],
+  ],
+  'LRT-R': [['l-badr', 1072, 520], ['l-knowledge-city', 960, 470]],
 }
 
 function place(sequence, anchors) {
@@ -58,10 +65,14 @@ const posA = place(['kit-kat', ...BRANCH_A], ANCHORS['3A'])
 const posB = place(['kit-kat', ...BRANCH_B], ANCHORS['3B'])
 const sENM = SERVICES.find((s) => s.id === 'ENM').stations
 const posENM = place(sENM, ANCHORS.ENM)
+const sLRT = SERVICES.find((s) => s.id === 'LRT').stations
+const sLRTR = SERVICES.find((s) => s.id === 'LRT-R').stations
+const posLRT = place(sLRT, ANCHORS.LRT)
+const posLRTR = place(sLRTR, ANCHORS['LRT-R'])
 
 // موضع كل محطة (التبادل بيتاخد من أول تعريف؛ الاختبار بيتأكد إنهم متطابقين)
-export const POSITIONS = { ...posL2, ...posL1, ...posTrunk, ...posA, ...posB, ...posENM }
-export const POSITIONS_BY_SOURCE = { posL1, posL2, posTrunk, posA, posB, posENM }
+export const POSITIONS = { ...posL2, ...posL1, ...posTrunk, ...posA, ...posB, ...posENM, ...posLRT, ...posLRTR }
+export const POSITIONS_BY_SOURCE = { posL1, posL2, posTrunk, posA, posB, posENM, posLRT, posLRTR }
 
 const pts = (seq, ...maps) =>
   seq.map((id) => {
@@ -76,6 +87,8 @@ export const LINE_PATHS = [
   { line: 3, points: pts([...L3_TRUNK, ...BRANCH_A], posTrunk, posA) },
   { line: 3, points: pts(['kit-kat', ...BRANCH_B], posB) },
   { line: 'ENM', points: pts(sENM, posENM) },
+  { line: 'LRT', points: pts(sLRT, posLRT) },
+  { line: 'LRT', points: pts(sLRTR, posLRTR) },
 ]
 
 // روابط المشي بين محطتين منفصلتين (بتترسم خط متقطع)

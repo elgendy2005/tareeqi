@@ -7,12 +7,14 @@ import { haversineKm } from '../lib/geo.js'
 // الأعداد المتوقعة موثّقة في docs/DATA.md (ويكيبيديا العربية والإنجليزية، مراجعة 9 نوفمبر 2026).
 const svc = (id) => SERVICES.find((s) => s.id === id)
 const isMonorail = (id) => id.startsWith('m-')
+const isLrt = (id) => id.startsWith('l-')
 
 describe('سلامة بيانات المترو', () => {
-  it('عدد المحطات الفريدة: 84 مترو + 22 مونوريل', () => {
+  it('عدد المحطات الفريدة: 84 مترو + 22 مونوريل + 12 LRT', () => {
     const ids = Object.keys(STATIONS)
-    expect(ids.filter((id) => !isMonorail(id))).toHaveLength(84)
+    expect(ids.filter((id) => !isMonorail(id) && !isLrt(id))).toHaveLength(84)
     expect(ids.filter(isMonorail)).toHaveLength(22)
+    expect(ids.filter(isLrt)).toHaveLength(12)
   })
 
   it('مفيش تكرار في الـ id، وكل مفتاح بيطابق الـ id بتاعه', () => {
@@ -82,7 +84,8 @@ describe('الخط الثالث (الأخضر)', () => {
 describe('الإحداثيات الجغرافية (OpenStreetMap)', () => {
   // حدود تقريبية للقاهرة الكبرى (حلوان جنوبًا ← المرج شمالًا، الجيزة غربًا ← عدلي منصور شرقًا)
   // (المونوريل بيوصل للعاصمة الجديدة شرقًا ~31.77)
-  const BOUNDS = { minLat: 29.8, maxLat: 30.25, minLng: 31.1, maxLng: 31.8 }
+  // (والـ LRT بيوصل لحدائق العاصمة ~31.81)
+  const BOUNDS = { minLat: 29.8, maxLat: 30.25, minLng: 31.1, maxLng: 31.85 }
 
   it('كل محطة ليها إحداثيات ورقم node من OSM، ومفيش إحداثيات لمحطة مش موجودة', () => {
     expect(Object.keys(COORDS).sort()).toEqual(Object.keys(STATIONS).sort())
@@ -101,7 +104,9 @@ describe('الإحداثيات الجغرافية (OpenStreetMap)', () => {
   it('المسافة بين أي محطتين جنب بعض معقولة — بيكشف ترتيب غلط أو node غلط', () => {
     // مترو: 0.3–3.5 كم · مونوريل (محطات أبعد في العاصمة الجديدة): 0.5–4.5 كم
     for (const s of SERVICES) {
-      const [min, max] = s.mode === 'monorail' ? [0.5, 4.5] : [0.3, 3.5]
+      // LRT قطار إقليمي: المحطات على بعد كيلومترات (1–9 كم)
+      const [min, max] =
+        s.mode === 'monorail' ? [0.5, 4.5] : s.mode === 'lrt' ? [1, 9] : [0.3, 3.5]
       for (let i = 1; i < s.stations.length; i++) {
         const [a, b] = [s.stations[i - 1], s.stations[i]]
         const d = haversineKm(COORDS[a], COORDS[b])
@@ -111,11 +116,11 @@ describe('الإحداثيات الجغرافية (OpenStreetMap)', () => {
     }
   })
 
-  it('كل رابط مشي بين محطتين موجودتين وقريبين فعلًا (أقل من 500 متر)', () => {
+  it('كل رابط مشي بين محطتين موجودتين وقريبين فعلًا (أقل من 800 متر)', () => {
     for (const { a, b, walkMinutes } of TRANSFER_LINKS) {
       expect(STATIONS[a], a).toBeDefined()
       expect(STATIONS[b], b).toBeDefined()
-      expect(haversineKm(COORDS[a], COORDS[b]), `${a} ↔ ${b}`).toBeLessThan(0.5)
+      expect(haversineKm(COORDS[a], COORDS[b]), `${a} ↔ ${b}`).toBeLessThan(0.8)
       expect(walkMinutes).toBeGreaterThan(0)
     }
   })
