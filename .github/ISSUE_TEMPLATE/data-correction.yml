@@ -1,0 +1,79 @@
+name: تصحيح بيانات (محطة أو سعر أو زمن)
+description: لقيت محطة ناقصة أو اسم غلط أو سعر اتغيّر؟ قولنا ومعاك المصدر.
+title: '[بيانات] '
+labels: ['data']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        شكرًا إنك بتساعد! «طريقي» مابيضيفش أي بيان من غير مصدر، فأهم حاجة في البلاغ ده **رابط المصدر**.
+        المصادر الحالية لكل بيان موجودة في [`docs/DATA.md`](https://github.com/elgendy2005/tareeqi/blob/main/docs/DATA.md).
+  - type: dropdown
+    id: kind
+    attributes:
+      label: نوع البيان
+      options:
+        - اسم محطة أو ترتيبها
+        - محطة جديدة اتفتحت
+        - سعر التذكرة أو الشرائح
+        - أسعار الفئات الخاصة (نص تذكرة / ذوي الهمم)
+        - الزمن أو مواعيد التشغيل
+        - التحويل أو المشي بين محطتين
+        - حاجة تانية
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: الوسيلة
+      multiple: true
+      options:
+        - الخط الأول
+        - الخط الثاني
+        - الخط الثالث
+        - مونوريل شرق النيل
+        - مونوريل غرب النيل
+        - القطار الكهربائي الخفيف LRT
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: الموقع بيقول إيه دلوقتي؟
+      description: ولو فيه رحلة بتوضّح المشكلة، حط رابطها (مثلًا `?from=maadi&to=opera`).
+    validations:
+      required: true
+  - type: textarea
+    id: correct
+    attributes:
+      label: الصح إيه؟
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: رابط المصدر
+      description: >-
+        المصدر الرسمي أولى (الهيئة القومية للأنفاق، الشركة المصرية لإدارة وتشغيل المترو، وزارة النقل،
+        المشغّل)، أو خبر من جريدة معروفة. صورة للافتة أو ماكينة التذاكر تنفع كمان: ارفعها تحت.
+      placeholder: https://
+    validations:
+      required: true
+  - type: input
+    id: source-date
+    attributes:
+      label: تاريخ المصدر أو تاريخ ما شفت ده بنفسك
+      placeholder: مثلًا 9 نوفمبر 2026
+  - type: textarea
+    id: extra
+    attributes:
+      label: أي تفاصيل أو صور زيادة
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: قبل ما تبعت
+      options:
+        - label: دوّرت في الـ Issues المفتوحة ومالقتش نفس البلاغ.
+          required: true
+        - label: المعلومة دي ليها مصدر (مش من الذاكرة).
+          required: true
