@@ -4,7 +4,7 @@
 [![Deploy](https://github.com/elgendy2005/tareeqi/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/elgendy2005/tareeqi/actions/workflows/deploy.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-### [▶ جرّب الموقع: elgendy2005.github.io/tareeqi](https://elgendy2005.github.io/tareeqi/)
+### [▶ جرّب الموقع: tareeqi.ahmedelgendy.dev](https://tareeqi.ahmedelgendy.dev/)
 
 ![تجربة كاملة: اختيار المعادي والأوبرا بالكتابة، والسعر ١٢ جنيه بتحويلة في السادات، ونص التذكرة بـ ٦ جنيه، وبعدها رحلة من العتبة لمدينة العدالة من الخريطة بتذكرتين مترو ومونوريل](docs/demo.gif)
 

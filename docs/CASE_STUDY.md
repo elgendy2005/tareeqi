@@ -1,7 +1,7 @@
 # دراسة حالة: طريقي
 
 **طريقي** أداة ويب بتجاوب على سؤال بسيط: «أركب إيه، وأغيّر فين، والتذكرة بكام؟» في مترو القاهرة (الخطوط 1 و2 و3) ومونوريل شرق النيل والقطار الكهربائي الخفيف LRT.
-[الموقع](https://elgendy2005.github.io/tareeqi/) · [الكود](https://github.com/elgendy2005/tareeqi)
+[الموقع](https://tareeqi.ahmedelgendy.dev/) · [الكود](https://github.com/elgendy2005/tareeqi)
 
 ## المشكلة
 

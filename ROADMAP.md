@@ -150,7 +150,7 @@
   - `og-image.png`: لقطة حقيقية من build الإنتاج لرحلة المعادي ← الأوبرا (1440×756 متصغّرة لـ 1200×630 عشان التذكرة كلها تبان)، وبتتولّد بـ `npm run assets`.
   - `robots.txt` موجود، بس على GitHub Pages الموقع في مسار فرعي (`/tareeqi/`)، والزواحف بتقرا `robots.txt` من جذر الدومين بس. يعني هيبقى مؤثر بس مع الدومين المخصص (المرحلة 5). ولحد ده، جذر `elgendy2005.github.io` مالوش `robots.txt`، وده معناه إن الفهرسة مسموحة.
   - `e2e/seo.spec.js`: الـ meta كلها، ومقاس الصورة 1200×630، و`robots.txt`. وكمان Playwright بقى مابيستخدمش سيرفر قديم (`reuseExistingServer: false`)، بعد ما مرة اختبر build قديم من غير ما نحس.
-  - ⚠️ لو الرابط اتغيّر (دومين مخصص)، لازم نحدّث `canonical` و`og:url` و`og:image` في `index.html`.
+  - الرابط الأساسي بقى `https://tareeqi.ahmedelgendy.dev/` في `canonical` و`og:url` و`og:image` و`twitter:image` (المرحلة 5). ولو الدومين اتغيّر تاني، لازم يتغيّر هنا وفي `SITE` في `e2e/seo.spec.js`.
 - [x] مجموعة أيقونات كاملة (favicon.ico, apple-touch-icon).
   - `favicon.ico` فيه 16 و32 و48 (PNG جوه ICO)، و`favicon.svg` للمتصفحات الحديثة، و`apple-touch-icon.png` (180، بخلفية كاملة لأن iOS بيدوّر الركن بنفسه). وكلهم بيتولّدوا بـ `npm run assets`، وعليهم اختبار في `e2e/seo.spec.js`.
 - [x] تحليلات اختيارية تحترم الخصوصية (بدون cookies) — **اسأل أحمد قبل الإضافة**.
@@ -169,6 +169,9 @@
 - [x] **`docs/CASE_STUDY.md`**: دراسة حالة قصيرة: المشكلة، نموذج الـ graph والخدمات، سبب جزاء التحويل، تحدّي الخط الثالث، قرارات الـ trade-offs، وإيه اللي اتعلمته.
   - سبب جزاء التحويل مدعوم بتجربة على كل الأزواج (13,806): من غير جزاء، 23% من الأزواج بتطلع رحلة بتحويلات أكتر، ومثال بولاق الدكرور ← مطار العاصمة (5 تحويلات مقابل تحويلة واحدة). وكمان فيه قسم عن التسعير وطريقة العد، وقاعدة «مفيش بيانات من الذاكرة»، وجدول trade-offs. ⚠️ قسم «اللي اتعلمته» مكتوب من اللي حصل فعلًا في المشروع: أحمد يراجعه ويعدّله بصوته.
 - [ ] **دومين مخصص** (اختياري): إعداد `tareeqi.ahmedelgendy.dev` كـ subdomain وربطه بـ GitHub Pages (CNAME) — يتم تنفيذه بعد موافقة أحمد.
+  - **أحمد وافق (9 نوفمبر 2026)، والدومين `ahmedelgendy.dev` متسجّل على name.com.** الكود اتحدّث للرابط الجديد (`index.html`، و`e2e/seo.spec.js`، والـ README، ودراسة الحالة، والـ CHANGELOG). مفيش ملف `CNAME`، لأن GitHub بيتجاهله لما النشر بيبقى بـ Actions، والدومين بيتحط من Settings → Pages.
+  - فاضل على أحمد: سجل `CNAME` (`tareeqi` ← `elgendy2005.github.io`) على name.com، وسجل TXT للتحقق من الدومين على GitHub (مستحسن)، والدومين في Settings → Pages، و**Enforce HTTPS** (`.dev` بيشتغل HTTPS بس).
+  - بعد ما الدومين يشتغل: نعمل push، ونتأكد إن الرابط القديم بيحوّل للجديد، وإن `robots.txt` بيرجع 200 من الجذر، ونعيد Lighthouse.
 - [ ] إعدادات الريبو: Description، Topics (`react`, `vite`, `tailwindcss`, `cairo`, `metro`, `arabic`, `rtl`, `pwa`)، رابط الموقع.
 - [x] `CONTRIBUTING.md` مختصر وقالب Issue لتصحيح بيانات المحطات والأسعار.
   - `CONTRIBUTING.md`: قاعدة «مفيش بيانات من غير مصدر»، والأوامر قبل الـ PR، وجدول «عايز تعدّل إيه، وفين»، وقواعد الكود (RTL وlogical properties وConventional Commits). و`.github/ISSUE_TEMPLATE/data-correction.yml`: نوع البيان، والوسيلة، والحالي مقابل الصح، و**رابط المصدر (إجباري)**. ⚠️ الـ label `data` لازم يتعمل على GitHub عشان يتحط تلقائي.

@@ -4,7 +4,7 @@
 
 ## [1.0.0] — 9 نوفمبر 2026
 
-أول إصدار كامل لـ **طريقي**. [الموقع](https://elgendy2005.github.io/tareeqi/) · [دراسة الحالة](docs/CASE_STUDY.md)
+أول إصدار كامل لـ **طريقي**. [الموقع](https://tareeqi.ahmedelgendy.dev/) · [دراسة الحالة](docs/CASE_STUDY.md)
 
 ### الشبكة والبيانات
 

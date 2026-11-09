@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const SITE = 'https://elgendy2005.github.io/tareeqi/'
+const SITE = 'https://tareeqi.ahmedelgendy.dev/'
 const meta = (page, attr, name) => page.locator(`meta[${attr}="${name}"]`).getAttribute('content')
 
 test('العنوان والوصف والـ canonical', async ({ page }) => {
