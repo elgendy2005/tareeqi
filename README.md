@@ -61,9 +61,11 @@ npm run build    # نسخة الإنتاج في dist/
 src/
   data/metro.js      المحطات والخطوط والأسعار
   data/layout.js     إحداثيات الخريطة التخطيطية
+  data/coords.js     إحداثيات جغرافية حقيقية (OpenStreetMap)
   data/data.test.js  اختبارات سلامة البيانات
   lib/router.js      محرك المسارات (Dijkstra) + حساب السعر
   lib/search.js      توحيد وبحث النصوص العربية
+  lib/geo.js         مسافات جغرافية (Haversine)
   lib/router.test.js اختبارات (Vitest)
   components/        StationPicker · MetroMap · RouteResult
 docs/DATA.md         مصدر كل بيان + تاريخ المراجعة
@@ -88,4 +90,6 @@ React 18 · Vite · Tailwind CSS v4 · Vitest · IBM Plex Sans Arabic (self-host
 
 ## الترخيص
 
-MIT
+الكود: MIT.
+
+الإحداثيات الجغرافية للمحطات (`src/data/coords.js`): © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright)، مرخّصة بـ ODbL 1.0.

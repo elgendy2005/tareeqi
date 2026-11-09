@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { STATIONS, SERVICES, LINES, L3_TRUNK, BRANCH_A, BRANCH_B } from './metro.js'
 import { isInterchange } from '../lib/router.js'
+import { COORDS } from './coords.js'
+import { haversineKm } from '../lib/geo.js'
 
 // الأعداد المتوقعة موثّقة في docs/DATA.md (ويكيبيديا العربية والإنجليزية، مراجعة 9 نوفمبر 2026).
 const svc = (id) => SERVICES.find((s) => s.id === id)
@@ -71,5 +73,34 @@ describe('الخط الثالث (الأخضر)', () => {
   it('نهايات الفرعين', () => {
     expect(svc('3A').stations.at(-1)).toBe('rod-el-farag-corridor')
     expect(svc('3B').stations.at(-1)).toBe('cairo-university')
+  })
+})
+
+describe('الإحداثيات الجغرافية (OpenStreetMap)', () => {
+  // حدود تقريبية للقاهرة الكبرى (حلوان جنوبًا ← المرج شمالًا، الجيزة غربًا ← عدلي منصور شرقًا)
+  const BOUNDS = { minLat: 29.8, maxLat: 30.25, minLng: 31.1, maxLng: 31.5 }
+
+  it('كل محطة ليها إحداثيات ورقم node من OSM، ومفيش إحداثيات لمحطة مش موجودة', () => {
+    expect(Object.keys(COORDS).sort()).toEqual(Object.keys(STATIONS).sort())
+    for (const [id, c] of Object.entries(COORDS)) expect(Number.isInteger(c.osm), id).toBe(true)
+  })
+
+  it('كل الإحداثيات جوه حدود القاهرة الكبرى', () => {
+    for (const [id, { lat, lng }] of Object.entries(COORDS)) {
+      expect(lat, id).toBeGreaterThan(BOUNDS.minLat)
+      expect(lat, id).toBeLessThan(BOUNDS.maxLat)
+      expect(lng, id).toBeGreaterThan(BOUNDS.minLng)
+      expect(lng, id).toBeLessThan(BOUNDS.maxLng)
+    }
+  })
+
+  it('المسافة بين أي محطتين جنب بعض معقولة (0.3–3.5 كم) — بيكشف ترتيب غلط أو node غلط', () => {
+    for (const s of SERVICES)
+      for (let i = 1; i < s.stations.length; i++) {
+        const [a, b] = [s.stations[i - 1], s.stations[i]]
+        const d = haversineKm(COORDS[a], COORDS[b])
+        expect(d, `${s.id}: ${a} → ${b}`).toBeGreaterThan(0.3)
+        expect(d, `${s.id}: ${a} → ${b}`).toBeLessThan(3.5)
+      }
   })
 })
