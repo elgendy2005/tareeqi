@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { STATIONS, FARE_EFFECTIVE } from './data/metro.js'
 import { findRoute } from './lib/router.js'
 import StationPicker from './components/StationPicker.jsx'
@@ -55,12 +55,25 @@ export default function App() {
   const clearRecent = () => setRecent([])
 
   // ضغطة على محطة في الخريطة: أول ضغطة = من، تاني ضغطة = إلى، وبعدها نبدأ من جديد
-  const onStationClick = (id) =>
+  const onStationClick = (id) => {
+    // تاني ضغطة بتكمّل الرحلة → على الموبايل نطلع للنتيجة (هي فوق الخريطة)
+    if (from && !to && id !== from) scrollToResult.current = true
     setPair((p) => {
       if (!p.from || (p.from && p.to)) return { from: id, to: null }
       if (id === p.from) return p
       return { ...p, to: id }
     })
+  }
+
+  const resultRef = useRef(null)
+  const scrollToResult = useRef(false)
+  useEffect(() => {
+    if (!scrollToResult.current || !route) return
+    scrollToResult.current = false
+    if (!window.matchMedia('(max-width: 1023px)').matches) return // على الديسكتوب النتيجة جنب الخريطة
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    resultRef.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+  }, [route])
 
   const share = async () => {
     try {
@@ -89,7 +102,7 @@ export default function App() {
 
       <main className="grid flex-1 content-start gap-5 lg:grid-cols-[minmax(340px,430px)_1fr]">
         {/* ---------- الاختيار ---------- */}
-        <div className="lg:col-start-1 lg:row-start-1">
+        <div className="order-1 lg:order-none lg:col-start-1 lg:row-start-1">
           <div className="rounded-2xl border-2 border-ink bg-card p-4">
             <div className="space-y-3">
               <StationPicker
@@ -141,12 +154,15 @@ export default function App() {
         </div>
 
         {/* ---------- الخريطة ---------- */}
-        <div className="h-[62vh] min-h-[400px] lg:sticky lg:top-5 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-[calc(100vh-7.5rem)]">
+        <div className="order-3 h-[55vh] min-h-[360px] lg:order-none lg:sticky lg:top-5 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-[calc(100vh-7.5rem)]">
           <MetroMap route={route} from={from} to={to} onStationClick={onStationClick} />
         </div>
 
         {/* ---------- النتيجة ---------- */}
-        <div className="lg:col-start-1 lg:row-start-2">
+        <div
+          ref={resultRef}
+          className="order-2 scroll-mt-4 lg:order-none lg:col-start-1 lg:row-start-2"
+        >
           {route ? (
             <RouteResult route={route} />
           ) : from && to && from === to ? (

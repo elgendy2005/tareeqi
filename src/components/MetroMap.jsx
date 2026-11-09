@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LINES, STATIONS } from '../data/metro.js'
 import { LINE_PATHS, POSITIONS, VIEWBOX, toPath } from '../data/layout.js'
 import { isInterchange } from '../lib/router.js'
+import { nearestPoint } from '../lib/hit.js'
 
 const MIN_K = 1
 const MAX_K = 6
@@ -139,9 +140,13 @@ export default function MetroMap({ route, from, to, onStationClick }) {
     gesture.current.lastDist = 0
   }
 
-  const handleStationClick = (id) => {
+  // ضغطة على الخريطة بتروح لأقرب محطة (في حدود دايرة اللمس). ده أدق من دواير لمس
+  // متداخلة: على الموبايل وفي زوم 1 المحطات قريبة، والدايرة اللي بتترسم آخر كانت بتغطي جارتها.
+  const onMapClick = (e) => {
     if (gesture.current.moved) return
-    onStationClick(id)
+    const p = toSvg(e.clientX, e.clientY)
+    const id = nearestPoint(POSITIONS, (p.x - t.x) / t.k, (p.y - t.y) / t.k, r(15))
+    if (id) onStationClick(id)
   }
 
   const zoomCenter = (f) => zoomAt(VIEWBOX.w / 2, VIEWBOX.h / 2, f)
@@ -189,6 +194,7 @@ export default function MetroMap({ route, from, to, onStationClick }) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onClick={onMapClick}
       >
         <g transform={`translate(${t.x} ${t.y}) scale(${t.k})`}>
           {/* النيل (زخرفة) */}
@@ -255,12 +261,7 @@ export default function MetroMap({ route, from, to, onStationClick }) {
             const lineColor =
               LINES[route?.legs.find((l) => l.stations.includes(st.id))?.line ?? 1].color
             return (
-              <g
-                key={st.id}
-                opacity={dim ? 0.35 : 1}
-                style={{ cursor: 'pointer' }}
-                onClick={() => handleStationClick(st.id)}
-              >
+              <g key={st.id} opacity={dim ? 0.35 : 1} style={{ cursor: 'pointer' }}>
                 <title>{`${st.ar} — ${st.en}`}</title>
                 <circle cx={x} cy={y} r={r(15)} fill="transparent" />
                 <circle
