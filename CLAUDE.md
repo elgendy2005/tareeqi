@@ -8,6 +8,7 @@
 
 - `npm run dev` — تشغيل التطوير (Vite)
 - `npm test` — اختبارات Vitest (المنطق في بيئة node. اختبارات المكوّنات بـ Testing Library وبتبدأ بـ `// @vitest-environment jsdom`، والإعداد في `src/test/setup.js`)
+- `npm run test:e2e` — Playwright على build الإنتاج (`e2e/`، ديسكتوب + موبايل). محتاج `npx playwright install chromium` أول مرة، أو `PW_CHANNEL=msedge` عشان يستخدم Edge المتثبّت.
 - `npm run build` — build الإنتاج في `dist/`
 - `npm run lint` — ESLint · `npm run format` — Prettier (`src/data/` مستثناة عمدًا عشان مصفوفات المحطات تفضل مضغوطة)
 - قبل أي commit: `npm run lint && npm test && npm run build`

@@ -7,5 +7,10 @@ export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],
   // البيئة الافتراضية node (اختبارات المنطق). اختبارات المكوّنات بتطلب jsdom في أول سطر في الملف.
-  test: { environment: 'node', setupFiles: ['./src/test/setup.js'] },
+  // e2e/ بيتشغّل بـ Playwright (npm run test:e2e)، مش Vitest.
+  test: {
+    environment: 'node',
+    setupFiles: ['./src/test/setup.js'],
+    include: ['src/**/*.test.{js,jsx}'],
+  },
 })
