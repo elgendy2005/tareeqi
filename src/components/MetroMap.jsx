@@ -33,6 +33,9 @@ const TERMINALS = new Set([
 // محطة ليها رابط مشي لمحطة تانية (زي الإستاد ↔ إستاد القاهرة) — بتتعامل كمحطة تبادل في العرض
 const isLink = (id) => walkLinksAt(id).length > 0
 
+// RLI…PDI: عزل نص عربي جوه SVG واخد direction: ltr (من غير ما نكتب escapes في الكود)
+const isolate = (text) => String.fromCodePoint(0x2067) + text + String.fromCodePoint(0x2069)
+
 // روابط مشي بين محطتين بنفس الاسم بالظبط → كل محطة بتشاور على توأمها
 const SAME_NAME_TWIN = Object.fromEntries(
   TRANSFER_LINKS.filter(({ a, b }) => STATIONS[a].ar === STATIONS[b].ar).flatMap(({ a, b }) => [
@@ -223,6 +226,7 @@ const MapLayers = memo(function MapLayers({ k, unit, route, from, to }) {
               strokeDasharray={`${r(10)} ${r(8)}`}
               strokeLinecap="round"
             />
+            {/* سطرين بدل سطر واحد: على الموبايل اللافتة بتكبر، والسطر الواحد كان بيوصل للخط التالت */}
             <text
               x={ex}
               y={ey - (16 * unit) / Math.pow(k, 0.55)}
@@ -232,7 +236,12 @@ const MapLayers = memo(function MapLayers({ k, unit, route, from, to }) {
               fill="#1d1b16"
               opacity={hasRoute ? 0.35 : 1}
             >
-              {`\u2067${p.ar} · تحت الإنشاء\u2069`}
+              <tspan x={ex} dy={-fs(12) * 1.2}>
+                {isolate(p.ar)}
+              </tspan>
+              <tspan x={ex} dy={fs(12) * 1.2}>
+                {isolate('تحت الإنشاء')}
+              </tspan>
             </text>
           </g>
         )
