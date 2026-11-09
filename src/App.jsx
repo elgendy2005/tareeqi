@@ -169,6 +169,14 @@ export default function App() {
             <p className="rounded-2xl border-2 border-dashed border-ink/40 p-4 text-ink-soft">
               محطة البداية والنهاية نفس بعض 🙂 اختار محطتين مختلفتين.
             </p>
+          ) : from && to ? (
+            // الشبكة متصلة فده مش متوقع، بس لو البيانات اتغيّرت مانسيبش المستخدم من غير رد
+            <p
+              role="alert"
+              className="rounded-2xl border-2 border-dashed border-danger/60 p-4 text-danger"
+            >
+              معرفناش نلاقي مسار بين المحطتين دول. جرّب محطة قريبة، أو بلّغنا لو شايف إن فيه مسار.
+            </p>
           ) : (
             <div className="rounded-2xl border-2 border-dashed border-ink/40 p-4">
               <p className="font-medium">اختار محطتين، أو دوس عليهم في الخريطة.</p>
