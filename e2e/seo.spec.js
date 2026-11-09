@@ -32,6 +32,21 @@ test('بطاقة المعاينة (Open Graph وTwitter) وصورتها موجو
   expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630])
 })
 
+test('الأيقونات: favicon.ico (16/32/48) وsvg وapple-touch-icon 180', async ({ page, request }) => {
+  await page.goto('./')
+  const href = (sel) => page.locator(sel).getAttribute('href')
+
+  const ico = await (await request.get(await href('link[rel="icon"][href$=".ico"]'))).body()
+  expect(ico.readUInt16LE(2)).toBe(1) // نوع الملف: أيقونة
+  const sizes = Array.from({ length: ico.readUInt16LE(4) }, (_, i) => ico.readUInt8(6 + 16 * i))
+  expect(sizes).toEqual([16, 32, 48])
+
+  expect((await request.get(await href('link[rel="icon"][type="image/svg+xml"]'))).ok()).toBe(true)
+
+  const apple = await (await request.get(await href('link[rel="apple-touch-icon"]'))).body()
+  expect([apple.readUInt32BE(16), apple.readUInt32BE(20)]).toEqual([180, 180])
+})
+
 test('robots.txt بيسمح بالفهرسة', async ({ request }) => {
   const res = await request.get('robots.txt')
   expect(res.ok()).toBe(true)
