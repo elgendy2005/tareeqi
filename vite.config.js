@@ -12,5 +12,13 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./src/test/setup.js'],
     include: ['src/**/*.test.{js,jsx}'],
+    // npm run test:coverage — بيفشل لو أي ملف في src/lib نزل عن 90%
+    coverage: {
+      provider: 'v8',
+      include: ['src/lib/**'],
+      exclude: ['**/*.test.*'],
+      reporter: ['text', 'html'],
+      thresholds: { perFile: true, statements: 90, branches: 90, functions: 90, lines: 90 },
+    },
   },
 })

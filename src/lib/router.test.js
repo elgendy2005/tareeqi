@@ -3,6 +3,7 @@ import {
   findRoute,
   fareFor,
   isInterchange,
+  linesAt,
   minutesPerStop,
   MIN_PER_TRANSFER,
   ticketPrice,
@@ -371,5 +372,26 @@ describe('الفئات الخاصة (نص تذكرة / ذوي الهمم)', () =
   it('routeFare: فيه LRT → missingDiscount', () => {
     const r = findRoute('attaba', 'l-capital-airport')
     expect(routeFare(r, 'disabled')).toMatchObject({ total: 5 + 20, missingDiscount: true })
+  })
+})
+
+describe('linesAt', () => {
+  it('محطة تبادل ليها أكتر من خط، والخط 3 بيتعد مرة واحدة رغم الخدمتين', () => {
+    expect(linesAt('sadat').sort()).toEqual([1, 2])
+    expect(linesAt('attaba').sort()).toEqual([2, 3])
+    expect(linesAt('kit-kat')).toEqual([3])
+    expect(linesAt('m-stadium')).toEqual(['ENM'])
+  })
+
+  it('محطة مش موجودة = مفيش خطوط', () => {
+    expect(linesAt('nowhere')).toEqual([])
+  })
+})
+
+describe('fareFor برّه الشرايح', () => {
+  it('أكتر من آخر شريحة = أعلى سعر مع overMax', () => {
+    const r = fareFor(500)
+    expect(r.price).toBe(20)
+    expect(r.overMax).toBe(true)
   })
 })
