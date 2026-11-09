@@ -1,6 +1,6 @@
 // تخطيط تخطيطي (schematic) للخريطة — مش خريطة جغرافية دقيقة.
 // بنحدد "نقاط ارتكاز" لمحطات معينة، والباقي بيتوزع بالتساوي بينهم.
-import { SERVICES, L3_TRUNK, BRANCH_A, BRANCH_B, TRANSFER_LINKS } from './metro.js'
+import { SERVICES, L3_TRUNK, BRANCH_A, BRANCH_B, TRANSFER_LINKS, PLANNED_LINES } from './metro.js'
 
 export const VIEWBOX = { w: 1100, h: 940 }
 
@@ -90,6 +90,15 @@ export const LINE_PATHS = [
   { line: 'LRT', points: pts(sLRT, posLRT) },
   { line: 'LRT', points: pts(sLRTR, posLRTR) },
 ]
+
+// خطوط تحت الإنشاء: من محطة الربط (لو موجودة) لاتجاه تقريبي — تخطيطي بس
+const PLANNED_GEOMETRY = {
+  WNM: [[230, 452], [90, 440]], // غرب النيل: من وادي النيل غربًا ناحية 6 أكتوبر
+}
+export const PLANNED_PATHS = PLANNED_LINES.map((l) => ({
+  ...l,
+  points: [...(l.connectsTo ? [POSITIONS[l.connectsTo]] : []), ...PLANNED_GEOMETRY[l.id]],
+}))
 
 // روابط المشي بين محطتين منفصلتين (بتترسم خط متقطع)
 export const WALK_PATHS = TRANSFER_LINKS.map(({ a, b }) => ({ a, b, points: [POSITIONS[a], POSITIONS[b]] }))

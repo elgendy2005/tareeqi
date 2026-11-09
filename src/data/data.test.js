@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { STATIONS, SERVICES, LINES, L3_TRUNK, BRANCH_A, BRANCH_B, TRANSFER_LINKS, FARE_SYSTEMS } from './metro.js'
+import {
+  STATIONS,
+  SERVICES,
+  LINES,
+  L3_TRUNK,
+  BRANCH_A,
+  BRANCH_B,
+  TRANSFER_LINKS,
+  FARE_SYSTEMS,
+  PLANNED_LINES,
+} from './metro.js'
 import { isInterchange } from '../lib/router.js'
 import { COORDS } from './coords.js'
 import { haversineKm } from '../lib/geo.js'
@@ -151,3 +161,14 @@ describe('مونوريل شرق النيل', () => {
   })
 })
 
+
+describe('الخطوط تحت الإنشاء (planned)', () => {
+  it('مش جزء من التوجيه: مالهاش محطات ولا خدمات، ومحطة الربط موجودة', () => {
+    for (const l of PLANNED_LINES) {
+      expect(l.status).toBe('planned')
+      expect(SERVICES.some((s) => s.id === l.id || s.line === l.id), l.id).toBe(false)
+      expect(LINES[l.id], l.id).toBeUndefined()
+      if (l.connectsTo) expect(STATIONS[l.connectsTo], l.connectsTo).toBeDefined()
+    }
+  })
+})

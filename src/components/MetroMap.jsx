@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LINES, STATIONS } from '../data/metro.js'
-import { LINE_PATHS, POSITIONS, VIEWBOX, WALK_PATHS, toPath } from '../data/layout.js'
+import {
+  LINE_PATHS,
+  PLANNED_PATHS,
+  POSITIONS,
+  VIEWBOX,
+  WALK_PATHS,
+  toPath,
+} from '../data/layout.js'
 import { isInterchange, walkLinksAt } from '../lib/router.js'
 import { nearestPoint } from '../lib/hit.js'
 
@@ -264,6 +271,34 @@ export default function MetroMap({ route, from, to, onStationClick }) {
             </g>
           ))}
 
+          {/* خطوط تحت الإنشاء: متقطعة وباهتة، ومش قابلة للاختيار */}
+          {PLANNED_PATHS.map((p) => {
+            const [ex, ey] = p.points[p.points.length - 1]
+            return (
+              <g key={p.id} opacity={hasRoute ? 0.2 : 0.55} pointerEvents="none">
+                <title>{`${p.ar} — ${p.note}`}</title>
+                <path
+                  d={toPath(p.points)}
+                  fill="none"
+                  stroke={p.color}
+                  strokeWidth={r(6)}
+                  strokeDasharray={`${r(10)} ${r(8)}`}
+                  strokeLinecap="round"
+                />
+                <text
+                  x={ex}
+                  y={ey - (16 * unit) / Math.pow(k, 0.55)}
+                  textAnchor="start"
+                  fontSize={fs(12)}
+                  fontWeight={600}
+                  fill="#1d1b16"
+                >
+                  {`\u2067${p.ar} · تحت الإنشاء\u2069`}
+                </text>
+              </g>
+            )
+          })}
+
           {/* روابط المشي بين محطتين منفصلتين */}
           {WALK_PATHS.map((w) => (
             <path
@@ -376,7 +411,7 @@ export default function MetroMap({ route, from, to, onStationClick }) {
                         pointerEvents="none"
                       >
                         {/* RLI…PDI: النص عربي جوه SVG واخد direction: ltr — العزل بيظبط ترتيب الأسماء المختلطة زي «حي R2» */}
-                        {`⁧${st.ar}⁩`}
+                        {`\u2067${st.ar}\u2069`}
                       </text>
                     )
                   })()}
@@ -441,6 +476,10 @@ export default function MetroMap({ route, from, to, onStationClick }) {
         <li className="flex items-center gap-1.5">
           <span className="inline-block w-5 border-t-2 border-dashed border-ink" />
           مشي
+        </li>
+        <li className="flex items-center gap-1.5 opacity-70">
+          <span className="inline-block w-5 border-t-[3px] border-dashed border-[#189ca6]" />
+          تحت الإنشاء
         </li>
       </ul>
     </div>
