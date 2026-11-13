@@ -50,9 +50,11 @@ export default function LocateButton({ onLocate }) {
         disabled={busy}
         aria-describedby={state.message ? 'locate-status' : undefined}
         title="موقعك بيتحسب على جهازك بس ومابيتبعتش لأي حد"
-        className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink px-3 py-0.5 text-xs font-medium transition-colors hover:bg-saffron/40 disabled:opacity-50"
+        className="btn-lift inline-flex items-center gap-1.5 rounded-full border-2 border-ink px-3 py-0.5 text-xs font-medium hover:bg-saffron/40 disabled:opacity-50"
       >
-        <span aria-hidden="true">{busy ? '⏳' : '📍'}</span>
+        <span aria-hidden="true" className={busy ? 'anim-walk' : undefined}>
+          {busy ? '⏳' : '📍'}
+        </span>
         {busy ? 'بندوّر…' : 'موقعي'}
       </button>
       {state.message && (

@@ -51,3 +51,40 @@ describe('MetroMap — اللافتات', () => {
     expect(cx).not.toBe(POSITIONS['adly-mansour'][0])
   })
 })
+
+describe('MetroMap — الحركة', () => {
+  const layer = () => screen.getByRole('img', { name: /خريطة تخطيطية/ }).querySelector(':scope > g')
+
+  it('من غير رحلة الخريطة في العرض الكامل', () => {
+    renderMap()
+    expect(layer().style.transform).toBe('translate(0px, 0px) scale(1)')
+  })
+
+  it('مع رحلة الخريطة بتقرّب عليها', () => {
+    renderMap('maadi', 'opera')
+    const k = Number(layer().style.transform.match(/scale\(([\d.]+)\)/)[1])
+    expect(k).toBeGreaterThan(1)
+  })
+
+  it('المسار بيترسم، والقطر بيظهر بس لو الحركة مش مقفولة', () => {
+    renderMap('maadi', 'opera')
+    expect(document.querySelectorAll('.route-draw').length).toBeGreaterThan(0)
+    expect(screen.getByTestId('route-train')).toBeInTheDocument()
+  })
+
+  it('مع prefers-reduced-motion مفيش قطر متحرك', () => {
+    const original = window.matchMedia
+    window.matchMedia = (query) => ({
+      matches: query.includes('reduce'),
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+    })
+    try {
+      renderMap('maadi', 'opera')
+      expect(screen.queryByTestId('route-train')).toBeNull()
+    } finally {
+      window.matchMedia = original
+    }
+  })
+})

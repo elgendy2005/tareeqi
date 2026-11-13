@@ -28,10 +28,14 @@ function readUrl() {
 export default function App() {
   const [{ from, to }, setPair] = useState(readUrl)
   const [copied, setCopied] = useState(false)
+  const [spins, setSpins] = useState(0) // سهم «اعكس» بيلف نص لفة مع كل ضغطة
 
   const setFrom = (id) => setPair((p) => ({ ...p, from: id }))
   const setTo = (id) => setPair((p) => ({ ...p, to: id }))
-  const swap = () => setPair((p) => ({ from: p.to, to: p.from }))
+  const swap = () => {
+    setSpins((s) => s + 1)
+    setPair((p) => ({ from: p.to, to: p.from }))
+  }
 
   // الرابط بيتحدّث تلقائي عشان تقدر تشارك الرحلة
   useEffect(() => {
@@ -108,7 +112,11 @@ export default function App() {
     <div className="mx-auto flex min-h-full max-w-[1400px] flex-col px-4 pb-6 pt-5 lg:px-8">
       <header className="mb-5 flex items-end justify-between gap-4">
         <div className="flex items-center gap-3">
-          <img src="./favicon.svg" alt="" className="h-11 w-11" />
+          <img
+            src="./favicon.svg"
+            alt=""
+            className="h-11 w-11 transition-transform duration-300 hover:-rotate-12 hover:scale-110"
+          />
           <div>
             <h1 className="text-3xl font-bold leading-none">طريقي</h1>
             <p className="mt-1 text-sm text-ink-soft">
@@ -148,9 +156,16 @@ export default function App() {
                   type="button"
                   onClick={swap}
                   disabled={!from && !to}
-                  className="rounded-full border-2 border-ink px-4 py-1 text-sm font-medium transition-colors hover:bg-saffron/40 disabled:opacity-40"
+                  className="btn-lift inline-flex items-center gap-1.5 rounded-full border-2 border-ink px-4 py-1 text-sm font-medium hover:bg-saffron/40 disabled:opacity-40"
                 >
-                  ⇅ اعكس الاتجاه
+                  <span
+                    aria-hidden="true"
+                    className="inline-block transition-transform duration-500"
+                    style={{ transform: `rotate(${spins * 180}deg)` }}
+                  >
+                    ⇅
+                  </span>
+                  اعكس الاتجاه
                 </button>
               </div>
               <StationPicker
@@ -170,9 +185,11 @@ export default function App() {
               <button
                 type="button"
                 onClick={share}
-                className="mt-4 w-full rounded-xl border-2 border-ink bg-ink px-4 py-2.5 font-medium text-paper transition-colors hover:bg-ink/85"
+                className="btn-lift anim-rise mt-4 w-full rounded-xl border-2 border-ink px-4 py-2.5 font-medium bg-ink text-paper hover:bg-ink/85"
               >
-                {copied ? 'اتنسخ الرابط ✓' : 'انسخ رابط الرحلة'}
+                <span key={String(copied)} className="anim-stamp">
+                  {copied ? 'اتنسخ الرابط ✓' : 'انسخ رابط الرحلة'}
+                </span>
               </button>
             )}
           </div>
@@ -189,7 +206,13 @@ export default function App() {
           className="order-2 scroll-mt-4 lg:order-none lg:col-start-1 lg:row-start-2"
         >
           {route ? (
-            <RouteResult route={route} category={category} onCategoryChange={setCategory} />
+            // الـ key: رحلة جديدة = أنيميشن دخول من الأول
+            <RouteResult
+              key={routeKey}
+              route={route}
+              category={category}
+              onCategoryChange={setCategory}
+            />
           ) : from && to && from === to ? (
             <p className="rounded-2xl border-2 border-dashed border-ink/40 p-4 text-ink-soft">
               محطة البداية والنهاية نفس بعض 🙂 اختار محطتين مختلفتين.
@@ -203,7 +226,7 @@ export default function App() {
               معرفناش نلاقي مسار بين المحطتين دول. جرّب محطة قريبة، أو بلّغنا لو شايف إن فيه مسار.
             </p>
           ) : (
-            <div className="rounded-2xl border-2 border-dashed border-ink/40 p-4">
+            <div className="anim-rise rounded-2xl border-2 border-dashed border-ink/40 p-4">
               <p className="font-medium">اختار محطتين، أو دوس عليهم في الخريطة.</p>
               {recent.length > 0 && (
                 <div className="mt-3">
@@ -218,13 +241,14 @@ export default function App() {
                     </button>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {recent.map((t) => (
+                    {recent.map((t, i) => (
                       <button
                         key={t.from + '>' + t.to}
                         type="button"
                         onClick={() => setPair({ from: t.from, to: t.to })}
                         aria-label={tripLabel(t.from, t.to)}
-                        className="rounded-full border-2 border-ink bg-saffron/30 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-saffron/60"
+                        style={{ animationDelay: `${0.1 + i * 0.05}s` }}
+                        className="btn-lift anim-rise rounded-full border-2 border-ink bg-saffron/30 px-3 py-1.5 text-sm font-medium hover:bg-saffron/60"
                       >
                         {STATIONS[t.from].ar} ← {STATIONS[t.to].ar}
                       </button>
@@ -234,13 +258,14 @@ export default function App() {
               )}
               <p className="mt-3 text-sm text-ink-soft">جرّب مثال سريع:</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {EXAMPLES.map(([a, b]) => (
+                {EXAMPLES.map(([a, b], i) => (
                   <button
                     key={a + b}
                     type="button"
                     onClick={() => setPair({ from: a, to: b })}
                     aria-label={tripLabel(a, b)}
-                    className="rounded-full border-2 border-ink bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:bg-saffron/40"
+                    style={{ animationDelay: `${0.2 + i * 0.06}s` }}
+                    className="btn-lift anim-rise rounded-full border-2 border-ink bg-card px-3 py-1.5 text-sm font-medium hover:bg-saffron/40"
                   >
                     {STATIONS[a].ar} ← {STATIONS[b].ar}
                   </button>

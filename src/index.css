@@ -69,6 +69,147 @@ summary::-webkit-details-marker {
   border-radius: 6px;
 }
 
+/* ---------- الحركة ----------
+   قاعدة: الحالة الأساسية (من غير أنيميشن) هي الحالة النهائية المرئية، والـ keyframes بتبدأ من
+   المخفي. كده لو prefers-reduced-motion قفل الأنيميشن، كل حاجة بتفضل ظاهرة في مكانها. */
+
+/* دخول ناعم من تحت (الكروت والخطوات والأمثلة) */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.anim-rise {
+  animation: rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* السعر بيتختم على التذكرة */
+@keyframes stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.6) rotate(-8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.94) rotate(1deg);
+  }
+}
+.anim-stamp {
+  display: inline-block;
+  animation: stamp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* لمعة بتعدّي على التذكرة لما تظهر */
+.ticket-shine {
+  position: relative;
+  overflow: hidden;
+}
+.ticket-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.5) 50%, transparent 65%);
+  transform: translateX(-130%);
+  animation: shine 1.1s 0.3s ease-out both;
+}
+@keyframes shine {
+  to {
+    transform: translateX(130%);
+  }
+}
+
+/* القايمة المنسدلة */
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+.anim-drop {
+  transform-origin: top;
+  animation: drop 0.16s ease-out both;
+}
+
+/* أيقونات التحويل: 🔄 بتلف مرة، و🚶 بتمشي */
+@keyframes spin-once {
+  from {
+    transform: rotate(-360deg);
+  }
+}
+.anim-spin-once {
+  display: inline-block;
+  animation: spin-once 0.8s 0.3s ease-in-out both;
+}
+@keyframes walk-bob {
+  50% {
+    transform: translateY(-2px) rotate(-6deg);
+  }
+}
+.anim-walk {
+  display: inline-block;
+  animation: walk-bob 0.6s ease-in-out infinite;
+}
+
+/* زرار بيترفع مع الماوس وبيتداس لما تضغطه (ظل صلب بنفس روح الحدود السودا) */
+.btn-lift {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+.btn-lift:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 0 0 var(--color-ink);
+}
+.btn-lift:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+/* الخريطة: المسار بيترسم نفسه (المسار عليه pathLength="1") */
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+.route-draw {
+  stroke-dasharray: 1 1;
+  animation: draw 0.9s ease-in-out both;
+}
+
+/* نبضة حوالين محطة البداية والنهاية. مخفية من غير أنيميشن */
+@keyframes pulse-ring {
+  from {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+.pulse-ring {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+
+/* المحطات اللي على الرحلة بتظهر بعد ما الخط يوصلها */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+.station-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pop-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1.4) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

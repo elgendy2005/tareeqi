@@ -105,7 +105,7 @@ export default function StationPicker({ label, value, onChange, placeholder, mar
               onChange(null)
               inputRef.current?.focus()
             }}
-            className="absolute inset-y-0 end-2 my-auto h-8 w-8 rounded-full text-xl leading-none text-ink-soft hover:bg-ink/10"
+            className="absolute inset-y-0 end-2 my-auto h-8 w-8 rounded-full text-xl leading-none text-ink-soft transition hover:rotate-90 hover:bg-ink/10"
           >
             ×
           </button>
@@ -116,7 +116,7 @@ export default function StationPicker({ label, value, onChange, placeholder, mar
         <ul
           id={`${uid}-list`}
           role="listbox"
-          className="absolute inset-x-0 z-30 mt-1 max-h-72 overflow-auto rounded-xl border-2 border-ink bg-card p-1 shadow-[4px_4px_0_0_rgb(29_27_22/0.9)]"
+          className="anim-drop absolute inset-x-0 z-30 mt-1 max-h-72 overflow-auto rounded-xl border-2 border-ink bg-card p-1 shadow-[4px_4px_0_0_rgb(29_27_22/0.9)]"
         >
           {/* أي عنصر جوه listbox لازم يبقى option — فرسالة «مفيش نتايج» option متعطّل */}
           {results.length === 0 && (
@@ -140,7 +140,7 @@ export default function StationPicker({ label, value, onChange, placeholder, mar
                 choose(st.id)
               }}
               onMouseEnter={() => setActive(i)}
-              className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 ${i === active ? 'bg-saffron/40' : ''}`}
+              className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 transition-colors ${i === active ? 'bg-saffron/40' : ''}`}
             >
               <span>
                 <span className="font-medium">{st.ar}</span>

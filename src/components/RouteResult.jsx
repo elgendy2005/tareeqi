@@ -41,7 +41,7 @@ function CategoryPicker({ value, onChange }) {
           tabIndex={value === key ? 0 : -1}
           title={c.hint}
           onClick={() => onChange(key)}
-          className={`rounded-full border-2 border-ink px-3 py-1 text-xs font-medium transition-colors ${value === key ? 'bg-ink text-paper' : 'bg-card/70 hover:bg-card'}`}
+          className={`rounded-full border-2 border-ink px-3 py-1 text-xs font-medium transition active:scale-95 ${value === key ? 'bg-ink text-paper' : 'bg-card/70 hover:bg-card'}`}
         >
           {c.ar}
         </button>
@@ -59,7 +59,7 @@ const headerBg = (color) => `color-mix(in srgb, ${color} 75%, black)`
 
 function Stat({ value, label }) {
   return (
-    <div className="flex-1 rounded-xl bg-card px-3 py-2.5 text-center">
+    <div className="flex-1 rounded-xl bg-card px-3 py-2.5 text-center transition-transform hover:-translate-y-0.5">
       <div className="text-2xl font-bold leading-tight">{value}</div>
       <div className="text-xs text-ink-soft">{label}</div>
     </div>
@@ -70,7 +70,9 @@ function Stat({ value, label }) {
 function Change({ children, icon = '🔄' }) {
   return (
     <div className="mb-3 flex items-start gap-2 rounded-xl border-2 border-dashed border-ink/40 bg-paper-2 px-3 py-2 text-sm font-medium leading-relaxed">
-      <span aria-hidden="true">{icon}</span>
+      <span aria-hidden="true" className={icon === '🚶' ? 'anim-walk' : 'anim-spin-once'}>
+        {icon}
+      </span>
       <span>{children}</span>
     </div>
   )
@@ -117,13 +119,14 @@ export default function RouteResult({ route, category = 'regular', onCategoryCha
         نتيجة الرحلة
       </h2>
       {/* التذكرة */}
-      <div className="ticket rounded-2xl border-2 border-ink p-4">
+      <div className="ticket ticket-shine anim-rise rounded-2xl border-2 border-ink p-4">
         <div className="flex items-end justify-between gap-3">
           <div>
             <div className="text-sm font-medium text-ink/75">
               {tickets.length === 0 ? 'مفيش تذكرة' : multi ? 'إجمالي التذاكر' : 'سعر التذكرة'}
             </div>
-            <div className="text-5xl font-bold leading-none">
+            {/* الـ key: السعر بيتختم من جديد كل ما يتغيّر (رحلة أو نوع تذكرة) */}
+            <div key={`${fare}-${category}`} className="anim-stamp text-5xl font-bold leading-none">
               {n(fare)} <span className="text-xl font-medium">جنيه</span>
             </div>
           </div>
@@ -174,7 +177,7 @@ export default function RouteResult({ route, category = 'regular', onCategoryCha
           const line = LINES[leg.line]
           const middle = leg.stations.slice(1, -1)
           return (
-            <li key={i}>
+            <li key={i} className="anim-rise" style={{ animationDelay: `${0.15 + i * 0.12}s` }}>
               {leg.walkBefore ? (
                 <Walk walk={leg.walkBefore} nextMode={leg.mode} />
               ) : (
@@ -228,7 +231,7 @@ export default function RouteResult({ route, category = 'regular', onCategoryCha
           )
         })}
         {walkAfter && (
-          <li>
+          <li className="anim-rise" style={{ animationDelay: `${0.15 + legs.length * 0.12}s` }}>
             <Walk walk={walkAfter} />
           </li>
         )}

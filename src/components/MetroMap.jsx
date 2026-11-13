@@ -112,11 +112,97 @@ function MapTextAlternative({ id }) {
 /** حجم عنصر على الخريطة: بيكبر مع `unit` (شاشات صغيرة) وبيصغر أبطأ من الزوم */
 const sized = (base, unit, k, power) => (base * unit) / Math.pow(k, power)
 
+const REDUCE_QUERY = '(prefers-reduced-motion: reduce)'
+
+/** المستخدم طالب حركة أقل؟ بيتابع التغيير لو اتعدّل والصفحة مفتوحة */
+function useReducedMotion() {
+  const [reduce, setReduce] = useState(() => window.matchMedia?.(REDUCE_QUERY).matches ?? false)
+  useEffect(() => {
+    const mq = window.matchMedia?.(REDUCE_QUERY)
+    if (!mq) return
+    const onChange = () => setReduce(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+  return reduce
+}
+
+/** نقط الرحلة بالترتيب (المشي + كل رحلة)، للقطر المتحرك وللزوم على الرحلة */
+function routePoints(route) {
+  const pts = []
+  const push = (id) => {
+    const p = POSITIONS[id]
+    const last = pts[pts.length - 1]
+    if (!last || last[0] !== p[0] || last[1] !== p[1]) pts.push(p)
+  }
+  route.legs.forEach((l) => {
+    if (l.walkBefore) [l.walkBefore.from, l.walkBefore.to].forEach(push)
+    l.stations.forEach(push)
+  })
+  if (route.walkAfter) [route.walkAfter.from, route.walkAfter.to].forEach(push)
+  return pts
+}
+
+/** مدة رسم كل رحلة (ثانية): الرحلات بتترسم ورا بعض، والإجمالي حوالي ثانيتين بالكتير */
+const legDuration = (route) => Math.min(0.9, 2 / Math.max(1, route.legs.length))
+
+/** زوم وإزاحة يخلّوا الرحلة كلها في النص، بهامش للافتات */
+function fitTransform(route) {
+  const pts = routePoints(route)
+  const xs = pts.map((p) => p[0])
+  const ys = pts.map((p) => p[1])
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
+  const pad = 110
+  const k = clamp(
+    Math.min(VIEWBOX.w / (x1 - x0 + 2 * pad), VIEWBOX.h / (y1 - y0 + 2 * pad)),
+    MIN_K,
+    2.6,
+  )
+  return {
+    k,
+    x: clamp(VIEWBOX.w / 2 - ((x0 + x1) / 2) * k, VIEWBOX.w * (1 - k), 0),
+    y: clamp(VIEWBOX.h / 2 - ((y0 + y1) / 2) * k, VIEWBOX.h * (1 - k), 0),
+  }
+}
+
+/**
+ * قطر صغير بيمشي على الرحلة بعد ما تترسم، ويقف شوية عند محطة النزول وبعدين يعيد.
+ * SMIL بـ begin="indefinite": البداية لازم تتحسب من لحظة ظهور الرحلة، مش من تحميل الصفحة.
+ * keyPoints/keyTimes: سرعة ثابتة لحد الآخر، وبعدين وقفة (آخر 18% من الدورة).
+ */
+function RouteTrain({ route, radius, delay }) {
+  const motion = useRef(null)
+  const show = useRef(null)
+  const d = toPath(routePoints(route))
+  const dur = clamp((route.fareStations ?? 10) * 0.35, 3, 12)
+  useEffect(() => {
+    motion.current?.beginElementAt?.(delay)
+    show.current?.beginElementAt?.(delay)
+  }, [delay])
+  return (
+    <g pointerEvents="none" opacity="0" data-testid="route-train">
+      <set ref={show} attributeName="opacity" to="1" begin="indefinite" fill="freeze" />
+      <animateMotion
+        ref={motion}
+        path={d}
+        dur={`${dur}s`}
+        begin="indefinite"
+        repeatCount="indefinite"
+        calcMode="linear"
+        keyPoints="0;1;1"
+        keyTimes="0;0.82;1"
+      />
+      <circle r={radius * 1.9} fill="#f2b134" opacity="0.4" />
+      <circle r={radius} fill="#1d1b16" stroke="#fbf8f1" strokeWidth={radius * 0.45} />
+    </g>
+  )
+}
+
 /**
  * كل اللي بيترسم جوه الخريطة. متغلّف بـ memo: السحب بيغيّر الإزاحة (x/y) بس في الأب،
  * فالمحطات والخطوط مابيتعادش رسمها غير لما الزوم أو المسار أو الاختيار يتغيّر.
  */
-const MapLayers = memo(function MapLayers({ k, unit, route, from, to }) {
+const MapLayers = memo(function MapLayers({ k, unit, route, from, to, reduceMotion }) {
   // ---- بيانات المسار المعروض ----
   const routeStations = useMemo(() => {
     const set = new Set()
@@ -135,6 +221,21 @@ const MapLayers = memo(function MapLayers({ k, unit, route, from, to }) {
     }
     return { set, transfers }
   }, [route])
+
+  // كل محطة على الرحلة بتظهر لما الخط المترسوم يوصلها
+  const legDur = route ? legDuration(route) : 0
+  const popDelay = useMemo(() => {
+    const m = new Map()
+    route?.legs.forEach((l, i) => {
+      const last = Math.max(1, l.stations.length - 1)
+      l.stations.forEach((s, j) => {
+        if (!m.has(s)) m.set(s, i * legDur + (j / last) * legDur)
+      })
+    })
+    return m
+  }, [route, legDur])
+  // الـ key فيه الرحلة: رحلة جديدة = عناصر جديدة، فالأنيميشن بيبدأ من الأول
+  const routeKey = route ? `${route.from}>${route.to}` : ''
 
   const hasRoute = !!route
   const r = (base) => sized(base, unit, k, 0.55) // دواير بتكبر أبطأ من الزوم
@@ -264,10 +365,15 @@ const MapLayers = memo(function MapLayers({ k, unit, route, from, to }) {
       {/* المسار المختار */}
       {route?.legs.map((leg, i) => {
         const d = toPath(leg.stations.map((s) => POSITIONS[s]))
+        // الرحلات بتترسم ورا بعض (pathLength="1" + stroke-dashoffset في index.css)
+        const style = { animationDelay: `${i * legDur}s`, animationDuration: `${legDur}s` }
         return (
-          <g key={i}>
+          <g key={routeKey + i}>
             <path
               d={d}
+              pathLength="1"
+              className="route-draw"
+              style={style}
               fill="none"
               stroke="#fbf8f1"
               strokeWidth={r(20)}
@@ -276,6 +382,9 @@ const MapLayers = memo(function MapLayers({ k, unit, route, from, to }) {
             />
             <path
               d={d}
+              pathLength="1"
+              className="route-draw"
+              style={style}
               fill="none"
               stroke={LINES[leg.line].color}
               strokeWidth={r(12)}
@@ -292,7 +401,9 @@ const MapLayers = memo(function MapLayers({ k, unit, route, from, to }) {
           .filter(Boolean)
           .map((w, i) => (
             <path
-              key={'walk' + i}
+              key={routeKey + 'walk' + i}
+              className="anim-rise"
+              style={{ animationDelay: `${route.legs.length * legDur * 0.5}s` }}
               d={toPath([POSITIONS[w.from], POSITIONS[w.to]])}
               fill="none"
               stroke="#1d1b16"
@@ -311,13 +422,30 @@ const MapLayers = memo(function MapLayers({ k, unit, route, from, to }) {
         const isFrom = st.id === from
         const isTo = st.id === to
         const radius = isFrom || isTo ? r(11) : inter ? r(9) : onRoute ? r(6.5) : r(5)
+        const pops = onRoute && !isFrom && !isTo
         const lineColor =
           LINES[route?.legs.find((l) => l.stations.includes(st.id))?.line ?? 1].color
         return (
           <g key={st.id} opacity={dim ? 0.35 : 1} style={{ cursor: 'pointer' }}>
             <title>{`${st.ar} — ${st.en}`}</title>
             <circle cx={x} cy={y} r={r(15)} fill="transparent" />
+            {(isFrom || isTo) && (
+              <circle
+                className="pulse-ring"
+                style={{ animationDelay: isTo ? '0.9s' : '0s' }}
+                cx={x}
+                cy={y}
+                r={radius}
+                fill="none"
+                stroke={isFrom ? '#1d1b16' : '#f2b134'}
+                strokeWidth={r(3)}
+                pointerEvents="none"
+              />
+            )}
             <circle
+              key={pops ? routeKey : 'base'}
+              className={pops ? 'station-pop' : undefined}
+              style={pops ? { animationDelay: `${popDelay.get(st.id) ?? 0}s` } : undefined}
               cx={x}
               cy={y}
               r={radius}
@@ -366,6 +494,15 @@ const MapLayers = memo(function MapLayers({ k, unit, route, from, to }) {
           </g>
         )
       })}
+
+      {route && !reduceMotion && (
+        <RouteTrain
+          key={routeKey}
+          route={route}
+          radius={r(8)}
+          delay={route.legs.length * legDur + 0.2}
+        />
+      )}
     </>
   )
 })
@@ -375,7 +512,15 @@ function MetroMap({ route, from, to, onStationClick }) {
   const svgRef = useRef(null)
   const pointers = useRef(new Map())
   const gesture = useRef({ moved: false, lastDist: 0 })
-  const [t, setT] = useState({ k: 1, x: 0, y: 0 })
+  const reduceMotion = useReducedMotion()
+  // anim: التغيير جاي من زرار أو رحلة جديدة (بيتحرك بنعومة)، مش من سحب أو عجلة الماوس
+  const [t, setT] = useState(() => (route ? fitTransform(route) : { k: 1, x: 0, y: 0 }))
+  // رحلة جديدة → الخريطة بتقرّب عليها. أثناء الـ render (نفس نمط App) بدل setState جوه effect
+  const [fitted, setFitted] = useState(route)
+  if (route !== fitted) {
+    setFitted(route)
+    if (route) setT({ ...fitTransform(route), anim: true })
+  }
   const [screenScale, setScreenScale] = useState(0.75) // بكسل شاشة لكل وحدة SVG عند زوم 1
 
   useEffect(() => {
@@ -408,11 +553,11 @@ function MetroMap({ route, from, to, onStationClick }) {
   }
 
   const zoomAt = useCallback(
-    (px, py, factor) =>
+    (px, py, factor, anim = false) =>
       setT((cur) => {
         const k = clamp(cur.k * factor, MIN_K, MAX_K)
         const r = k / cur.k
-        return bound({ k, x: px - (px - cur.x) * r, y: py - (py - cur.y) * r })
+        return { ...bound({ k, x: px - (px - cur.x) * r, y: py - (py - cur.y) * r }), anim }
       }),
     [bound],
   )
@@ -492,7 +637,7 @@ function MetroMap({ route, from, to, onStationClick }) {
     if (id) onStationClick(id)
   }
 
-  const zoomCenter = (f) => zoomAt(VIEWBOX.w / 2, VIEWBOX.h / 2, f)
+  const zoomCenter = (f) => zoomAt(VIEWBOX.w / 2, VIEWBOX.h / 2, f, true)
 
   const k = t.k
   // على الموبايل الخريطة بتتصغّر، فبنكبّر العناصر عشان تفضل مقروءة
@@ -515,8 +660,21 @@ function MetroMap({ route, from, to, onStationClick }) {
         onPointerCancel={onPointerUp}
         onClick={onMapClick}
       >
-        <g transform={`translate(${t.x} ${t.y}) scale(${t.k})`}>
-          <MapLayers k={k} unit={unit} route={route} from={from} to={to} />
+        {/* transform كـ CSS عشان يتحرك بـ transition (وحدات px هنا = وحدات الـ SVG) */}
+        <g
+          style={{
+            transform: `translate(${t.x}px, ${t.y}px) scale(${t.k})`,
+            transition: t.anim ? 'transform 0.7s cubic-bezier(0.3, 0.7, 0.2, 1)' : 'none',
+          }}
+        >
+          <MapLayers
+            k={k}
+            unit={unit}
+            route={route}
+            from={from}
+            to={to}
+            reduceMotion={reduceMotion}
+          />
         </g>
       </svg>
 
@@ -528,7 +686,7 @@ function MetroMap({ route, from, to, onStationClick }) {
           type="button"
           aria-label="تكبير"
           onClick={() => zoomCenter(1.5)}
-          className="h-10 w-10 text-xl font-bold hover:bg-saffron/40"
+          className="h-10 w-10 text-xl font-bold transition-colors hover:bg-saffron/40 active:bg-saffron/70"
         >
           +
         </button>
@@ -536,15 +694,15 @@ function MetroMap({ route, from, to, onStationClick }) {
           type="button"
           aria-label="تصغير"
           onClick={() => zoomCenter(1 / 1.5)}
-          className="h-10 w-10 border-t-2 border-ink text-xl font-bold hover:bg-saffron/40"
+          className="h-10 w-10 border-t-2 border-ink text-xl font-bold transition-colors hover:bg-saffron/40 active:bg-saffron/70"
         >
           −
         </button>
         <button
           type="button"
           aria-label="إعادة ضبط العرض"
-          onClick={() => setT({ k: 1, x: 0, y: 0 })}
-          className="h-10 w-10 border-t-2 border-ink text-sm hover:bg-saffron/40"
+          onClick={() => setT({ k: 1, x: 0, y: 0, anim: true })}
+          className="h-10 w-10 border-t-2 border-ink text-sm transition-colors hover:bg-saffron/40 active:bg-saffron/70"
         >
           ⟲
         </button>
