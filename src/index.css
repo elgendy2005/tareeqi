@@ -216,3 +216,48 @@ summary::-webkit-details-marker {
     animation: none !important;
   }
 }
+
+/* ---------- الخريطة الجغرافية (Leaflet) ---------- */
+.geo-map.leaflet-container {
+  font-family: var(--font-sans);
+  background: var(--color-paper-2);
+}
+/* الشوارع أهدى شوية عشان خطوط المترو تبان فوقها */
+.geo-map .leaflet-tile-pane {
+  filter: saturate(0.55) contrast(0.95);
+}
+.geo-map .leaflet-bar {
+  border: 2px solid var(--color-ink);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: none;
+}
+.geo-map .leaflet-bar a {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  color: var(--color-ink);
+  background: var(--color-card);
+  border-bottom-color: var(--color-ink);
+}
+.geo-map .leaflet-bar a:hover {
+  background: rgb(242 177 52 / 0.4);
+}
+.geo-map .leaflet-attribution-flag {
+  display: none !important;
+}
+.geo-label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-ink);
+  background: var(--color-card);
+  border: 1.5px solid var(--color-ink);
+  border-radius: 8px;
+  padding: 1px 6px;
+  box-shadow: none;
+}
+.geo-label-strong {
+  font-size: 13px;
+  font-weight: 700;
+}

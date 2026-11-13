@@ -25,4 +25,6 @@ if (typeof window !== 'undefined') {
     removeEventListener() {},
   })
   Element.prototype.scrollIntoView ??= () => {}
+  // Leaflet بيقرر إن المتصفح بيدعم SVG لو createSVGRect موجودة، وjsdom مافيهاش
+  SVGSVGElement.prototype.createSVGRect ??= () => ({ x: 0, y: 0, width: 0, height: 0 })
 }

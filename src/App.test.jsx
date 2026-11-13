@@ -111,3 +111,28 @@ describe('App — التدفق الكامل', () => {
     expect(screen.getByRole('heading', { name: /مونوريل شرق النيل/ })).toBeInTheDocument()
   })
 })
+
+describe('App — نوع الخريطة', () => {
+  it('التبديل للجغرافية بيحمّل خريطة الشوارع، والاختيار بيتفتكر', async () => {
+    const user = userEvent.setup()
+    window.history.replaceState(null, '', '/?from=maadi&to=opera')
+    const { unmount } = render(<App />)
+    const geoBtn = screen.getByRole('button', { name: 'جغرافية' })
+    expect(geoBtn).toHaveAttribute('aria-pressed', 'false')
+    await user.click(geoBtn)
+    expect(geoBtn).toHaveAttribute('aria-pressed', 'true')
+    const geo = await screen.findByRole('region', { name: /خريطة جغرافية/ })
+    // لافتات ثابتة للبداية والنهاية والتحويلة
+    expect(await within(geo).findByText('السادات')).toBeInTheDocument()
+    expect(within(geo).getByText('المعادي')).toBeInTheDocument()
+    expect(within(geo).getByText('الأوبرا')).toBeInTheDocument()
+    expect(within(geo).getByRole('link', { name: 'مساهمو OpenStreetMap' })).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: /خريطة تخطيطية/ })).not.toBeInTheDocument()
+    unmount()
+
+    render(<App />)
+    expect(screen.getByRole('button', { name: 'جغرافية' })).toHaveAttribute('aria-pressed', 'true')
+    await user.click(screen.getByRole('button', { name: 'تخطيطية' }))
+    expect(screen.getByRole('img', { name: /خريطة تخطيطية/ })).toBeInTheDocument()
+  })
+})

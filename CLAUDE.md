@@ -41,6 +41,7 @@ React 18 (JSX، مش TypeScript) · Vite · Tailwind CSS v4 · Vitest · خط IB
 - المونوريل: محطاته بـ id بيبدأ بـ `m-` (مثلًا «هشام بركات» في المونوريل غير «هشام بركات» في المترو). الربط الوحيد بالمترو مشي في الإستاد (`TRANSFER_LINKS`). كل وسيلة ليها تذكرة وشرايح لوحدها (`FARE_SYSTEMS`)، و`route.tickets` فيها تذكرة لكل مجموعة رحلات متتالية على نفس الوسيلة. `route.legs` رحلات ركوب بس، والمشي بيتسجّل في `leg.walkBefore` أو `route.walkAfter`.
 - الـ LRT: محطاته بـ id بيبدأ بـ `l-`، ومتمثّل كخدمتين: `LRT` (عدلي منصور ↔ الفنون والثقافة)، و`LRT-R` (مكوكي بدر ↔ مدينة المعرفة). وضع الوسيلة `mode: 'lrt'`، والزمن بـ `minutesPerStop`.
 - الفئات الخاصة: `FARE_SYSTEMS[mode].concessions` (`senior` و`disabled`، يا إما شرايح يا إما `flat`). `ticketPrice` و`routeFare` في الـ router بيحسبوا السعر لأي فئة. أي وسيلة مالهاش خصم معلن بتتحسب بالسعر العادي، و`missingDiscount` بيبقى true.
+- الخريطة الجغرافية (`GeoMap.jsx`): Leaflet + tiles من OSM، بتتحمّل بـ `React.lazy` بس لما المستخدم يختار «جغرافية» (التفضيل في `localStorage` عن طريق `src/lib/geoLines.js`). حاويتها `dir="ltr"`. الضغط برضه بيروح لأقرب محطة على الشاشة (`nearestPoint`)، والماركرز بتعدّي الضغطة للخريطة. اختبارات jsdom محتاجة `createSVGRect` (موجودة في `src/test/setup.js`).
 - أسماء المحطات جوه الـ SVG بتتلف بـ RLI…PDI (`\u2067…\u2069`) عشان الأسماء المختلطة زي «حي R2» تتعرض صح.
 
 ## ممنوعات

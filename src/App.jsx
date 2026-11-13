@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { STATIONS, FARE_EFFECTIVE } from './data/metro.js'
 import { findRoute, routeFare } from './lib/router.js'
 import { routeSummary, tripLabel } from './lib/format.js'
@@ -8,6 +8,16 @@ import MetroMap from './components/MetroMap.jsx'
 import RouteResult from './components/RouteResult.jsx'
 import LocateButton from './components/LocateButton.jsx'
 import { addRecent, loadRecent, saveRecent } from './lib/recent.js'
+import { loadMapView, saveMapView } from './lib/geoLines.js'
+import MapLoadBoundary from './components/MapLoadBoundary.jsx'
+
+// Leaflet وخريطة الشوارع بيتحمّلوا بس لما حد يفتح العرض الجغرافي
+const GeoMap = lazy(() => import('./components/GeoMap.jsx'))
+
+const MAP_VIEWS = [
+  ['schematic', 'تخطيطية'],
+  ['geo', 'جغرافية'],
+]
 
 const isStation = (id) => Boolean(id && STATIONS[id])
 
@@ -51,6 +61,10 @@ export default function App() {
   // نوع التذكرة (عادية / نص تذكرة / ذوي الهمم) — بيتفتكر على الجهاز بس
   const [category, setCategory] = useState(loadCategory)
   useEffect(() => saveCategory(category), [category])
+
+  // نوع الخريطة (تخطيطية / جغرافية) — برضه على الجهاز بس
+  const [mapView, setMapView] = useState(loadMapView)
+  useEffect(() => saveMapView(mapView), [mapView])
 
   // ملخص لقارئ الشاشة. منطقة الـ status دي موجودة دايمًا، عشان أول رحلة تتقري هي كمان.
   const announcement = route
@@ -196,8 +210,43 @@ export default function App() {
         </div>
 
         {/* ---------- الخريطة ---------- */}
-        <div className="order-3 h-[55vh] min-h-[360px] lg:order-none lg:sticky lg:top-5 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-[calc(100vh-7.5rem)]">
-          <MetroMap route={route} from={from} to={to} onStationClick={onStationClick} />
+        <div className="order-3 flex h-[60vh] min-h-[400px] flex-col gap-2 lg:order-none lg:sticky lg:top-5 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-[calc(100vh-7.5rem)]">
+          <div
+            role="group"
+            aria-label="نوع الخريطة"
+            className="flex self-start overflow-hidden rounded-full border-2 border-ink bg-card text-sm font-medium"
+          >
+            {MAP_VIEWS.map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={mapView === id}
+                onClick={() => setMapView(id)}
+                className={`px-4 py-1 transition-colors ${
+                  mapView === id ? 'bg-ink text-paper' : 'hover:bg-saffron/40'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="min-h-0 flex-1">
+            {mapView === 'geo' ? (
+              <MapLoadBoundary onFail={() => setMapView('schematic')}>
+                <Suspense
+                  fallback={
+                    <div className="map-grid flex h-full items-center justify-center rounded-2xl border-2 border-ink text-ink-soft">
+                      بنحمّل الخريطة الجغرافية…
+                    </div>
+                  }
+                >
+                  <GeoMap route={route} from={from} to={to} onStationClick={onStationClick} />
+                </Suspense>
+              </MapLoadBoundary>
+            ) : (
+              <MetroMap route={route} from={from} to={to} onStationClick={onStationClick} />
+            )}
+          </div>
         </div>
 
         {/* ---------- النتيجة ---------- */}
@@ -277,8 +326,8 @@ export default function App() {
       </main>
 
       <footer className="mt-6 text-center text-xs text-ink-soft">
-        الخريطة تخطيطية مش جغرافية · أسعار التذاكر: وزارة النقل (سارية من {FARE_EFFECTIVE}) ·
-        إحداثيات المحطات: ©{' '}
+        الخريطة التخطيطية مش بمقياس رسم، والجغرافية خطوطها مستقيمة بين المحطات · أسعار التذاكر:
+        وزارة النقل (سارية من {FARE_EFFECTIVE}) · إحداثيات المحطات: ©{' '}
         <a
           href="https://www.openstreetmap.org/copyright"
           target="_blank"
